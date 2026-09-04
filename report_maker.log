@@ -1,0 +1,7 @@
+2026-09-04 15:33:54,395 [INFO] 리포트 생성 완료: D:\stuls\python\report.md
+2026-09-04 15:40:02,212 [INFO] 리포트 생성 완료: D:\stuls\python\report.md
+2026-09-04 15:40:02,234 [WARNING] 전송 실패 1/3: 404 Client Error: Not Found for url: http://localhost:5678/webhook-test/239b13a9-e1ad-4846-964a-af0c3ba47dd1
+2026-09-04 15:40:04,257 [WARNING] 전송 실패 2/3: 404 Client Error: Not Found for url: http://localhost:5678/webhook-test/239b13a9-e1ad-4846-964a-af0c3ba47dd1
+2026-09-04 15:40:08,283 [WARNING] 전송 실패 3/3: 404 Client Error: Not Found for url: http://localhost:5678/webhook-test/239b13a9-e1ad-4846-964a-af0c3ba47dd1
+2026-09-04 15:45:02,235 [INFO] 리포트 생성 완료: D:\stuls\python\report.md
+2026-09-04 15:45:02,248 [WARNING] 전송 실패 1/3: 404 Client Error: Not Found for url: http://localhost:5678/webhook-test/239b13a9-e1ad-4846-964a-af0c3ba47dd1
