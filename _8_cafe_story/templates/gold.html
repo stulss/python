@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}골드 라운지 - 카페이야기{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- 골드 전용 배너 -->
+    <section class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-600 p-8 sm:p-10 text-amber-950 shadow-xl shadow-amber-500/20 border border-amber-300">
+        <div class="relative z-10 max-w-2xl">
+            <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-950/20 backdrop-blur-md text-amber-950 text-xs font-extrabold mb-3 border border-amber-900/20">
+                <i class="fa-solid fa-crown text-yellow-200"></i> 골드 등급 (Level 1) 이상 전용 라운지
+            </div>
+            <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight leading-tight text-amber-950">
+                골드 회원 & 중간 관리자<br>VIP 시크릿 라운지
+            </h1>
+            <p class="mt-3 text-amber-900 text-sm leading-relaxed font-medium">
+                환영합니다! 본 라운지는 <strong>골드회원(Lv.1)</strong>과 <strong>관리자(Lv.2)</strong>만 출입 가능한 공간입니다.<br>
+                일반회원(Lv.0)은 접근 제어(RBAC)에 의해 차단되며 예외 화면이 출력됩니다.
+            </p>
+            
+            <div class="mt-5 flex items-center gap-2">
+                <span class="text-xs bg-white/70 px-3 py-1 rounded-lg font-bold text-amber-900 border border-amber-300">
+                    현재 접속자: {{ current_user.nickname }}님 [{{ current_user.role_name }} Lv.{{ current_user.role_level }}]
+                </span>
+                <span class="text-xs bg-emerald-800 text-white px-2.5 py-1 rounded-lg font-bold">
+                    <i class="fa-solid fa-lock-open mr-1"></i> 접근 승인됨
+                </span>
+            </div>
+        </div>
+        <div class="absolute -right-10 -bottom-10 w-72 h-72 bg-white/20 rounded-full blur-2xl pointer-events-none"></div>
+    </section>
+
+    <!-- VIP 특별 혜택 카드 그리드 -->
+    <section>
+        <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-gift text-amber-600"></i> 골드 회원 전용 특별 VIP 혜택
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <!-- 혜택 1 -->
+            <div class="bg-white p-6 rounded-3xl border border-amber-200 shadow-sm hover:shadow-md transition-all">
+                <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center text-xl mb-4">
+                    <i class="fa-solid fa-tags"></i>
+                </div>
+                <h3 class="font-bold text-slate-900 text-base mb-1">스페셜티 원두 20% 할인 쿠폰</h3>
+                <p class="text-xs text-slate-500 mb-4">골드 회원님만을 위한 전용 할인 코드입니다.</p>
+                <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 flex items-center justify-between">
+                    <code class="font-mono font-bold text-amber-900 text-sm">GOLD-BEAN-2026</code>
+                    <button onclick="navigator.clipboard.writeText('GOLD-BEAN-2026'); showToast('쿠폰 코드가 복사되었습니다!', 'success')" class="text-xs text-amber-700 hover:text-amber-900 font-bold">
+                        <i class="fa-solid fa-copy mr-1"></i> 복사
+                    </button>
+                </div>
+            </div>
+
+            <!-- 혜택 2 -->
+            <div class="bg-white p-6 rounded-3xl border border-amber-200 shadow-sm hover:shadow-md transition-all">
+                <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center text-xl mb-4">
+                    <i class="fa-solid fa-flask"></i>
+                </div>
+                <h3 class="font-bold text-slate-900 text-base mb-1">바리스타 시크릿 레시피</h3>
+                <p class="text-xs text-slate-500 mb-4">골드 등급 이상에게만 공개되는 핸드드립 매뉴얼입니다.</p>
+                <div class="text-xs text-slate-700 space-y-1 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <div>• 원두: 파나마 게이샤 내추럴 18g</div>
+                    <div>• 분쇄: Comandante 24 클릭</div>
+                    <div>• 물: 91℃ 300ml (35초 뜸 들이기)</div>
+                </div>
+            </div>
+
+            <!-- 혜택 3 -->
+            <div class="bg-white p-6 rounded-3xl border border-amber-200 shadow-sm hover:shadow-md transition-all">
+                <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center text-xl mb-4">
+                    <i class="fa-solid fa-users-gear"></i>
+                </div>
+                <h3 class="font-bold text-slate-900 text-base mb-1">중간 관리자 안건 회의실</h3>
+                <p class="text-xs text-slate-500 mb-4">카페 운영 방향 및 시즌 신메뉴 선정 투표에 참여하세요.</p>
+                <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span>현재 '가을 원두 시음회' 투표 진행 중</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 골드 전용 API 연동 테스트 박스 -->
+    <section class="bg-white rounded-3xl p-6 border border-amber-200 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-server text-amber-600"></i> 골드 전용 REST API 접근 테스트
+                </h3>
+                <p class="text-xs text-slate-500 mt-0.5">엔드포인트: <code class="bg-slate-100 px-1.5 py-0.5 rounded text-amber-900 font-bold">GET /api/gold/perks</code> (@role_required(min_level=1))</p>
+            </div>
+            <button onclick="fetchGoldPerks()" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-1.5">
+                <i class="fa-solid fa-play"></i> API 호출 테스트
+            </button>
+        </div>
+        <div id="apiResultBox" class="p-4 bg-slate-900 text-emerald-400 rounded-2xl font-mono text-xs overflow-x-auto min-h-[60px] flex items-center">
+            <span class="text-slate-500">// 버튼을 누르면 골드 권한 검증 API 결과 JSON이 출력됩니다.</span>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function fetchGoldPerks() {
+        const box = document.getElementById('apiResultBox');
+        box.innerHTML = '<span class="text-yellow-400">API 호출 중...</span>';
+        try {
+            const res = await fetch('/api/gold/perks');
+            const data = await res.json();
+            box.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            if (data.success) {
+                showToast('골드 API 인증 및 데이터 수신 성공!', 'success');
+            } else {
+                showToast(data.message || '권한 부족', 'error');
+            }
+        } catch (e) {
+            box.innerHTML = `<span class="text-rose-400">오류: ${e}</span>`;
+        }
+    }
+</script>
+{% endblock %}

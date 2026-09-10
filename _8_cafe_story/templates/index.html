@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+
+{% block title %}카페이야기 - 홈 & 권한 제어 테스트{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- 메인 배너 -->
+    <section class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-amber-900 via-amber-800 to-amber-950 p-8 sm:p-10 text-white shadow-xl shadow-amber-950/20">
+        <div class="relative z-10 max-w-2xl">
+            <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/15 backdrop-blur-md text-amber-200 text-xs font-semibold mb-3 border border-white/20">
+                <i class="fa-solid fa-mug-hot"></i> 카페이야기 RBAC 접근 제어 미니실습
+            </div>
+            <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight leading-tight">
+                따뜻한 커피와 소중한 이야기가<br>함께 머무는 공간
+            </h1>
+            <p class="mt-3 text-amber-100/90 text-sm leading-relaxed">
+                일반회원(Lv.0), 골드회원(Lv.1, 중간관리자), 관리자(Lv.2)로 구성된 
+                <strong>역할 기반 접근 제어(RBAC)</strong> 시스템입니다. 각 메뉴에 접근하여 권한 인가 동작을 테스트해보세요.
+            </p>
+            
+            <div class="mt-6 flex flex-wrap gap-3">
+                <a href="/gold" class="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-amber-950 font-bold text-xs shadow-md shadow-amber-500/30 transition-all flex items-center gap-1.5">
+                    <i class="fa-solid fa-crown"></i> 골드 라운지 접속 시도 (Lv.1 이상)
+                </a>
+                <a href="/admin" class="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-md shadow-rose-600/30 transition-all flex items-center gap-1.5">
+                    <i class="fa-solid fa-shield-halved"></i> 관리자 센터 접속 시도 (Lv.2 관리자)
+                </a>
+            </div>
+        </div>
+        <div class="absolute -right-8 -bottom-8 w-64 h-64 bg-amber-600/20 rounded-full blur-3xl pointer-events-none"></div>
+    </section>
+
+    <!-- 등급별 권한 인포그래픽 매트릭스 (요구사항 4번) -->
+    <section>
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <i class="fa-solid fa-id-badge text-amber-700"></i> 등급별 권한 및 접근 범위 (RBAC Matrix)
+            </h2>
+            <span class="text-xs text-slate-500">인가 레벨: 0, 1, 2 체계</span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- 일반 회원 카드 -->
+            <div class="bg-white p-5 rounded-2xl border border-emerald-200/80 shadow-xs hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-lg">
+                        <i class="fa-solid fa-seedling"></i>
+                    </span>
+                    <span class="text-xs font-extrabold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                        Level 0 (기본)
+                    </span>
+                </div>
+                <h3 class="font-bold text-slate-900 text-base">일반 등급 (최초 가입)</h3>
+                <p class="text-xs text-slate-500 mt-1">회원가입 시 기본 부여되는 등급입니다.</p>
+                <div class="mt-4 pt-3 border-t border-slate-100 space-y-1.5 text-xs">
+                    <div class="flex items-center gap-2 text-emerald-700 font-medium">
+                        <i class="fa-solid fa-check"></i> 메인 카페 이야기 열람 & 작성
+                    </div>
+                    <div class="flex items-center gap-2 text-rose-500">
+                        <i class="fa-solid fa-xmark"></i> 골드 라운지 접근 불가 (403 예외)
+                    </div>
+                    <div class="flex items-center gap-2 text-rose-500">
+                        <i class="fa-solid fa-xmark"></i> 관리자 페이지 접근 불가 (403 예외)
+                    </div>
+                </div>
+            </div>
+
+            <!-- 골드 회원 카드 -->
+            <div class="bg-white p-5 rounded-2xl border border-amber-300 shadow-xs hover:shadow-md transition-shadow relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-16 h-16 bg-amber-400/10 rounded-bl-full pointer-events-none"></div>
+                <div class="flex items-center justify-between mb-3">
+                    <span class="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-lg">
+                        <i class="fa-solid fa-crown text-amber-600"></i>
+                    </span>
+                    <span class="text-xs font-extrabold px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-400">
+                        Level 1 (골드)
+                    </span>
+                </div>
+                <h3 class="font-bold text-slate-900 text-base">골드 등급 (중간 관리자)</h3>
+                <p class="text-xs text-slate-500 mt-1">우수 활동 및 중간 관리자 등급입니다.</p>
+                <div class="mt-4 pt-3 border-t border-slate-100 space-y-1.5 text-xs">
+                    <div class="flex items-center gap-2 text-emerald-700 font-medium">
+                        <i class="fa-solid fa-check"></i> 메인 이야기 열람 & 작성
+                    </div>
+                    <div class="flex items-center gap-2 text-amber-700 font-bold">
+                        <i class="fa-solid fa-check"></i> 골드 라운지 VIP 입장 허용
+                    </div>
+                    <div class="flex items-center gap-2 text-rose-500">
+                        <i class="fa-solid fa-xmark"></i> 관리자 페이지 접근 불가 (403 예외)
+                    </div>
+                </div>
+            </div>
+
+            <!-- 관리자 카드 -->
+            <div class="bg-white p-5 rounded-2xl border border-rose-300 shadow-xs hover:shadow-md transition-shadow relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-16 h-16 bg-rose-400/10 rounded-bl-full pointer-events-none"></div>
+                <div class="flex items-center justify-between mb-3">
+                    <span class="w-10 h-10 rounded-xl bg-rose-100 text-rose-800 flex items-center justify-center font-bold text-lg">
+                        <i class="fa-solid fa-shield-halved text-rose-600"></i>
+                    </span>
+                    <span class="text-xs font-extrabold px-2.5 py-1 rounded-full bg-rose-100 text-rose-800 border border-rose-300">
+                        Level 2 (운영자)
+                    </span>
+                </div>
+                <h3 class="font-bold text-slate-900 text-base">관리자 (운영자)</h3>
+                <p class="text-xs text-slate-500 mt-1">시스템 최고 권한을 가진 총괄 운영자입니다.</p>
+                <div class="mt-4 pt-3 border-t border-slate-100 space-y-1.5 text-xs">
+                    <div class="flex items-center gap-2 text-emerald-700 font-medium">
+                        <i class="fa-solid fa-check"></i> 전체 커뮤니티 관리
+                    </div>
+                    <div class="flex items-center gap-2 text-emerald-700 font-medium">
+                        <i class="fa-solid fa-check"></i> 골드 라운지 및 모든 페이지 허용
+                    </div>
+                    <div class="flex items-center gap-2 text-rose-700 font-bold">
+                        <i class="fa-solid fa-check"></i> 회원 정보 조회 / 등급 수정 / 삭제
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 게시글 피드 영역 -->
+    <section class="bg-white rounded-3xl p-6 sm:p-8 border border-amber-200/60 shadow-xs">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-5 border-b border-slate-100 gap-4">
+            <div>
+                <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-comments text-amber-700"></i> 최신 카페 이야기 피드
+                </h2>
+                <p class="text-xs text-slate-500 mt-0.5">회원들이 남긴 커피 향 가득한 이야기들을 확인해보세요</p>
+            </div>
+            <div>
+                {% if current_user %}
+                <button onclick="openModal('createPostModal')" class="px-4 py-2 rounded-xl bg-amber-800 hover:bg-amber-900 text-white font-bold text-xs shadow-md shadow-amber-800/20 transition-all flex items-center gap-1.5">
+                    <i class="fa-solid fa-pen"></i> 이야기 작성하기
+                </button>
+                {% else %}
+                <button onclick="openModal('loginModal')" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition-all flex items-center gap-1.5">
+                    <i class="fa-solid fa-lock"></i> 로그인 후 글쓰기
+                </button>
+                {% endif %}
+            </div>
+        </div>
+
+        <div id="postListContainer" class="mt-6 space-y-4">
+            <div class="text-center py-10 text-slate-400">
+                <i class="fa-solid fa-spinner fa-spin text-2xl mb-2"></i>
+                <p class="text-xs">게시글을 불러오는 중입니다...</p>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- 새 이야기 작성 모달 -->
+<div id="createPostModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-amber-100 relative">
+        <button onclick="closeModal('createPostModal')" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600">
+            <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+        <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-pen-nib text-amber-700"></i> 새로운 카페 이야기 작성
+        </h3>
+
+        <form id="createPostForm" onsubmit="handleCreatePost(event)" class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">카테고리</label>
+                <select id="postCategory" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-600">
+                    <option value="이야기">자유 이야기</option>
+                    <option value="추천메뉴">추천 메뉴 & 레시피</option>
+                    <option value="질문">커피 질문</option>
+                    {% if current_user and current_user.role_level == 2 %}
+                    <option value="공지">운영 공지사항 (관리자 전용)</option>
+                    {% endif %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">제목</label>
+                <input type="text" id="postTitle" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-600" placeholder="제목을 입력하세요">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">내용</label>
+                <textarea id="postContent" required rows="4" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-600" placeholder="따뜻한 이야기를 공유해보세요..."></textarea>
+            </div>
+            <button type="submit" class="w-full py-3 bg-amber-800 hover:bg-amber-900 text-white font-bold rounded-xl shadow-md transition-all text-sm">
+                게시글 등록
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function loadPosts() {
+        const container = document.getElementById('postListContainer');
+        try {
+            const res = await fetch('/api/posts');
+            const data = await res.json();
+            if (!data.success || !data.posts.length) {
+                container.innerHTML = '<div class="text-center py-10 text-slate-400 text-xs">등록된 게시글이 없습니다. 첫 이야기를 남겨보세요!</div>';
+                return;
+            }
+
+            const currentUserId = {{ current_user.id if current_user else 'null' }};
+            const currentUserRole = {{ current_user.role_level if current_user else -1 }};
+
+            container.innerHTML = data.posts.map(p => {
+                const isAuthor = currentUserId === p.user_id;
+                const isAdmin = currentUserRole === 2;
+                const canDelete = isAuthor || isAdmin;
+
+                const roleBadgeClass = p.author_role === 2 ? 'bg-rose-100 text-rose-800 border-rose-300' :
+                                       p.author_role === 1 ? 'bg-amber-100 text-amber-900 border-amber-300' :
+                                       'bg-emerald-100 text-emerald-800 border-emerald-300';
+                
+                const roleIcon = p.author_role === 2 ? 'fa-shield-halved' :
+                                 p.author_role === 1 ? 'fa-crown' : 'fa-seedling';
+
+                return `
+                    <div class="p-5 rounded-2xl bg-amber-50/40 border border-amber-200/50 hover:border-amber-300 transition-all">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-amber-200/80 text-amber-900">
+                                    ${p.category}
+                                </span>
+                                <h4 class="font-bold text-slate-900 text-base">${p.title}</h4>
+                            </div>
+                            ${canDelete ? `
+                                <button onclick="deletePost(${p.id})" class="text-xs text-rose-500 hover:text-rose-700 p-1 hover:bg-rose-50 rounded" title="게시글 삭제">
+                                    <i class="fa-solid fa-trash-can mr-1"></i> 삭제
+                                </button>
+                            ` : ''}
+                        </div>
+                        <p class="text-slate-700 text-sm leading-relaxed whitespace-pre-line mb-3">${p.content}</p>
+                        <div class="flex items-center justify-between pt-2 border-t border-amber-200/30 text-xs text-slate-500">
+                            <div class="flex items-center gap-2">
+                                <span class="font-semibold text-slate-800">${p.author_nickname}</span>
+                                <span class="inline-flex items-center gap-1 text-[10px] px-2 py-0.2 rounded border ${roleBadgeClass}">
+                                    <i class="fa-solid ${roleIcon}"></i> ${p.author_role_name} (Lv.${p.author_role})
+                                </span>
+                            </div>
+                            <span>${p.created_at}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        } catch (e) {
+            container.innerHTML = `<div class="text-center py-10 text-rose-500 text-xs">게시글 로드 실패: ${e}</div>`;
+        }
+    }
+
+    async function handleCreatePost(e) {
+        e.preventDefault();
+        const category = document.getElementById('postCategory').value;
+        const title = document.getElementById('postTitle').value.trim();
+        const content = document.getElementById('postContent').value.trim();
+
+        try {
+            const res = await fetch('/api/posts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ category, title, content })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.message, 'success');
+                closeModal('createPostModal');
+                document.getElementById('postTitle').value = '';
+                document.getElementById('postContent').value = '';
+                loadPosts();
+            } else {
+                showToast(data.message || '등록 실패', 'error');
+            }
+        } catch (err) {
+            showToast('오류 발생: ' + err, 'error');
+        }
+    }
+
+    async function deletePost(id) {
+        if (!confirm('정말 이 게시글을 삭제하시겠습니까?')) return;
+        try {
+            const res = await fetch(`/api/posts/${id}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.message, 'success');
+                loadPosts();
+            } else {
+                showToast(data.message, 'error');
+            }
+        } catch (err) {
+            showToast('삭제 오류: ' + err, 'error');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadPosts);
+</script>
+{% endblock %}

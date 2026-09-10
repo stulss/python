@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Chrome Browser Frame</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap');
+        body { font-family: 'Pretendard', sans-serif; margin: 0; padding: 0; background: #202124; }
+    </style>
+</head>
+<body class="flex flex-col h-screen w-screen overflow-hidden">
+    <!-- Chrome 상단 탭 및 주소창 바 -->
+    <div class="bg-[#dfe1e5] border-b border-[#dadce0] select-none">
+        <!-- 탭 바 -->
+        <div class="flex items-center px-2 pt-2 gap-1">
+            <div class="bg-white rounded-t-lg px-4 py-2 text-xs font-semibold text-slate-800 flex items-center gap-2 shadow-xs max-w-[240px] truncate">
+                <i class="fa-solid fa-mug-hot text-amber-700"></i>
+                <span id="tabTitle">카페이야기 - 접근 제어 테스트</span>
+                <i class="fa-solid fa-xmark text-slate-400 hover:text-slate-600 ml-2"></i>
+            </div>
+            <div class="text-slate-500 hover:bg-slate-300/50 p-1.5 rounded-full cursor-pointer">
+                <i class="fa-solid fa-plus text-xs"></i>
+            </div>
+        </div>
+
+        <!-- 주소창 및 컨트롤 바 -->
+        <div class="bg-white px-3 py-2 flex items-center gap-3 border-t border-[#dadce0]">
+            <div class="flex items-center gap-2 text-slate-600 text-sm">
+                <button class="p-1 hover:bg-slate-100 rounded-full"><i class="fa-solid fa-arrow-left"></i></button>
+                <button class="p-1 hover:bg-slate-100 rounded-full"><i class="fa-solid fa-arrow-right"></i></button>
+                <button class="p-1 hover:bg-slate-100 rounded-full"><i class="fa-solid fa-rotate-right"></i></button>
+            </div>
+
+            <!-- 실제 Omnibox URL 입력창 -->
+            <div class="flex-1 bg-[#f1f3f4] hover:bg-[#e8eaed] focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-500 rounded-full px-4 py-1.5 flex items-center justify-between text-xs text-slate-700 border border-transparent">
+                <div class="flex items-center gap-2 font-mono">
+                    <i class="fa-solid fa-lock text-emerald-600 text-[11px]"></i>
+                    <span id="urlDisplay" class="font-medium">http://127.0.0.1:5000/</span>
+                </div>
+                <div class="flex items-center gap-2 text-slate-400">
+                    <i class="fa-regular fa-star hover:text-slate-600 cursor-pointer"></i>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 text-slate-600 text-sm">
+                <span class="text-xs bg-amber-100 text-amber-900 font-bold px-2 py-1 rounded-md border border-amber-300" id="roleBadgeDisplay">
+                    RBAC Active
+                </span>
+                <div class="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-700">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 웹페이지 iframe 본문 -->
+    <iframe id="pageFrame" src="about:blank" class="flex-1 w-full border-0 bg-white"></iframe>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const targetUrl = params.get('url') || 'http://127.0.0.1:5000/';
+        const displayUrl = params.get('display_url') || targetUrl;
+        const title = params.get('title') || '카페이야기';
+        const roleBadge = params.get('role') || 'RBAC 시스템';
+
+        document.getElementById('urlDisplay').innerText = displayUrl;
+        document.getElementById('tabTitle').innerText = title;
+        document.getElementById('roleBadgeDisplay').innerText = roleBadge;
+        document.getElementById('pageFrame').src = targetUrl;
+    </script>
+</body>
+</html>
+

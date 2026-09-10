@@ -4,9 +4,19 @@
  */
 
 // Global State
+function loadStoredUser() {
+    try {
+        return JSON.parse(localStorage.getItem('board_user_info') || 'null');
+    } catch (e) {
+        // 손상된 값이 남아있으면 스크립트 전체가 죽지 않도록 초기화하고 넘어간다
+        localStorage.removeItem('board_user_info');
+        return null;
+    }
+}
+
 let state = {
     token: localStorage.getItem('board_jwt_token') || null,
-    user: JSON.parse(localStorage.getItem('board_user_info') || 'null'),
+    user: loadStoredUser(),
     currentCategory: '전체',
     searchKeyword: '',
     searchType: 'all',

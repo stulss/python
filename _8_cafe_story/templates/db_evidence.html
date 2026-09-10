@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>MySQL DB `cafe_users` 테이블 권한 확인</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600;700&family=Pretendard:wght@400;600;700&display=swap');
+        body { font-family: 'Pretendard', sans-serif; }
+        .font-mono { font-family: 'Fira Code', monospace; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 p-8 min-h-screen flex items-center justify-center">
+    <div class="max-w-4xl w-full bg-slate-950 rounded-2xl border border-slate-800 shadow-2xl overflow-hidden">
+        <!-- 터미널 상단 바 -->
+        <div class="bg-slate-900 px-4 py-3 border-b border-slate-800 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-rose-500 inline-block"></span>
+                <span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>
+                <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
+                <span class="text-xs font-mono text-slate-400 ml-2">mysql -u root -p cafe_story_db</span>
+            </div>
+            <div class="text-xs font-mono text-slate-500">
+                MySQL 8.0 · Docker Container
+            </div>
+        </div>
+
+        <div class="p-6 font-mono text-sm space-y-4">
+            <div>
+                <span class="text-emerald-400 font-bold">mysql&gt;</span> 
+                <span class="text-amber-300 font-bold">SELECT</span> id, username, nickname, role_level, created_at <span class="text-amber-300 font-bold">FROM</span> cafe_users <span class="text-amber-300 font-bold">ORDER BY</span> id <span class="text-amber-300 font-bold">ASC</span>;
+            </div>
+
+            <!-- 결과 테이블 -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse border border-slate-700 text-xs">
+                    <thead>
+                        <tr class="bg-slate-800 text-cyan-300 border-b border-slate-700">
+                            <th class="p-2.5 border-r border-slate-700">+----+</th>
+                            <th class="p-2.5 border-r border-slate-700">username</th>
+                            <th class="p-2.5 border-r border-slate-700">nickname</th>
+                            <th class="p-2.5 border-r border-slate-700">role_level (등급)</th>
+                            <th class="p-2.5">created_at</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800">
+                        <tr class="hover:bg-slate-800/50">
+                            <td class="p-2.5 border-r border-slate-700 text-slate-400">|  1 |</td>
+                            <td class="p-2.5 border-r border-slate-700 font-bold text-rose-400">admin</td>
+                            <td class="p-2.5 border-r border-slate-700 text-slate-200">카페운영자</td>
+                            <td class="p-2.5 border-r border-slate-700">
+                                <span class="px-2 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-700 font-bold">2 (관리자/운영자)</span>
+                            </td>
+                            <td class="p-2.5 text-slate-400">2026-09-10 03:50:44 |</td>
+                        </tr>
+                        <tr class="hover:bg-slate-800/50">
+                            <td class="p-2.5 border-r border-slate-700 text-slate-400">|  2 |</td>
+                            <td class="p-2.5 border-r border-slate-700 font-bold text-amber-400">golduser</td>
+                            <td class="p-2.5 border-r border-slate-700 text-slate-200">골드바리스타</td>
+                            <td class="p-2.5 border-r border-slate-700">
+                                <span class="px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-700 font-bold">1 (골드회원/중간관리자)</span>
+                            </td>
+                            <td class="p-2.5 text-slate-400">2026-09-10 03:50:44 |</td>
+                        </tr>
+                        <tr class="hover:bg-slate-800/50">
+                            <td class="p-2.5 border-r border-slate-700 text-slate-400">|  3 |</td>
+                            <td class="p-2.5 border-r border-slate-700 font-bold text-emerald-400">user1</td>
+                            <td class="p-2.5 border-r border-slate-700 text-slate-200">새싹원두</td>
+                            <td class="p-2.5 border-r border-slate-700">
+                                <span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-700 font-bold">0 (일반유저)</span>
+                            </td>
+                            <td class="p-2.5 text-slate-400">2026-09-10 03:50:44 |</td>
+                        </tr>
+                        <tr class="hover:bg-slate-800/50">
+                            <td class="p-2.5 border-r border-slate-700 text-slate-400">|  4 |</td>
+                            <td class="p-2.5 border-r border-slate-700 text-slate-300">test_guest_01</td>
+                            <td class="p-2.5 border-r border-slate-700 text-slate-300">테스트새싹</td>
+                            <td class="p-2.5 border-r border-slate-700">
+                                <span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-700 font-bold">0 (최초가입 기본)</span>
+                            </td>
+                            <td class="p-2.5 text-slate-400">2026-09-10 03:53:06 |</td>
+                        </tr>
+                        <tr class="hover:bg-slate-800/50">
+                            <td class="p-2.5 border-r border-slate-700 text-slate-400">|  5 |</td>
+                            <td class="p-2.5 border-r border-slate-700 text-slate-300">new_guest_99</td>
+                            <td class="p-2.5 border-r border-slate-700 text-slate-300">새싹원두99</td>
+                            <td class="p-2.5 border-r border-slate-700">
+                                <span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-700 font-bold">0 (최초가입 기본)</span>
+                            </td>
+                            <td class="p-2.5 text-slate-400">2026-09-10 03:53:19 |</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="text-xs text-slate-400 pt-2">
+                5 rows in set (0.00 sec)
+            </div>
+
+            <div class="mt-4 p-3 bg-slate-900 rounded-xl border border-slate-800 text-xs text-slate-300 flex items-center justify-between">
+                <div><span class="text-cyan-400">Role Mapping:</span> 0 = 일반유저(최초 가입 기본) | 1 = 골드유저(중간 관리자) | 2 = 관리자(운영자)</div>
+                <div class="text-emerald-400 font-bold"><i class="fa-solid fa-circle-check"></i> DB 검증 완료</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

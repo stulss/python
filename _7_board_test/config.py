@@ -33,6 +33,9 @@ class Config:
   PORT = int(os.getenv("FLASK_PORT", 5000))
   DEBUG = os.getenv("FLASK_DEBUG", "True").lower() in ("true", "1", "yes")
 
+  # 보안 이벤트 REST 용 API 키 (n8n 이 공유) — 비어 있으면 POST 는 항상 401 (fail-closed)
+  SECURITY_API_KEY = os.getenv("SECURITY_API_KEY", "")
+
   @classmethod
   def get_db_dict(cls, include_db=True):
     conf = {

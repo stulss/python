@@ -68,6 +68,25 @@ def init_db():
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
             """)
 
+      # 보안 이벤트 테이블 생성 (n8n 이 판정 결과를 REST 로 저장하는 곳)
+      cursor.execute("""
+                CREATE TABLE IF NOT EXISTS security_events (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    student VARCHAR(50) NOT NULL,
+                    src_ip VARCHAR(45) NOT NULL,
+                    fail_count INT NOT NULL DEFAULT 0,
+                    decision VARCHAR(10) NOT NULL,
+                    severity VARCHAR(10) NOT NULL DEFAULT 'Low',
+                    reason VARCHAR(200),
+                    rule_id VARCHAR(50),
+                    generated_at VARCHAR(32),
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_student (student),
+                    INDEX idx_src_ip (src_ip),
+                    INDEX idx_decision (decision)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            """)
+
       # 샘플 데이터 주입 (유저가 없을 때 기본 테스트 계정 및 게시글 생성)
       cursor.execute("SELECT COUNT(*) AS cnt FROM users;")
       user_count = cursor.fetchone()["cnt"]

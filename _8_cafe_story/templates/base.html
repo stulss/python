@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}카페이야기 - 접근 제어 테스트 시스템{% endblock %}</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cafe: {
+                            50: '#fdf8f6',
+                            100: '#f2e8e5',
+                            200: '#eaddd7',
+                            300: '#e0cec7',
+                            400: '#d2bab0',
+                            500: '#bfa094',
+                            600: '#a18072',
+                            700: '#977669',
+                            800: '#846358',
+                            900: '#43302b',
+                        },
+                        gold: {
+                            400: '#fbbf24',
+                            500: '#f59e0b',
+                            600: '#d97706',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Pretendard', sans-serif; }
+    </style>
+</head>
+<body class="bg-amber-50/40 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- 상단 네비게이션 헤더 (요구사항 1: 골드링크, 관리자링크, 로그인유저명, 권한 표기) -->
+    <header class="bg-white/95 backdrop-blur-md sticky top-0 z-40 border-b border-amber-200/60 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            
+            <!-- 좌측: 로고 -->
+            <div class="flex items-center gap-3">
+                <a href="/" class="flex items-center gap-2.5 group">
+                    <div class="w-10 h-10 bg-gradient-to-tr from-amber-700 to-amber-900 rounded-xl flex items-center justify-center text-white shadow-md shadow-amber-900/20 group-hover:scale-105 transition-transform">
+                        <i class="fa-solid fa-mug-hot text-lg text-amber-200"></i>
+                    </div>
+                    <div>
+                        <span class="font-extrabold text-xl text-amber-950 tracking-tight flex items-center gap-1.5">
+                            카페이야기
+                            <span class="text-[11px] font-semibold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full border border-amber-200">RBAC 제어</span>
+                        </span>
+                        <span class="text-[11px] text-amber-700/80 block -mt-0.5">권한 기반 접근 제어 시스템</span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- 중앙: 핵심 메뉴 (골드 라운지 링크, 관리자 센터 링크) -->
+            <nav class="hidden md:flex items-center gap-2">
+                <a href="/" class="px-3.5 py-2 rounded-xl text-sm font-semibold transition-all {% if request.path == '/' %}bg-amber-100 text-amber-900{% else %}text-slate-600 hover:bg-amber-50 hover:text-amber-900{% endif %}">
+                    <i class="fa-solid fa-house mr-1 text-amber-700"></i> 홈
+                </a>
+
+                <!-- 1. 골드등급 링크 (요구사항 1번) -->
+                <a href="/gold" id="navGoldLink" class="px-3.5 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-1.5 {% if request.path == '/gold' %}bg-amber-500 text-white shadow-sm shadow-amber-500/30{% else %}text-amber-800 hover:bg-amber-100/80 border border-amber-300/80 bg-amber-50/50{% endif %}">
+                    <i class="fa-solid fa-crown text-amber-500 {% if request.path == '/gold' %}text-yellow-200{% endif %}"></i>
+                    <span>골드 라운지</span>
+                    <span class="text-[10px] px-1.5 py-0.2 rounded bg-amber-200/80 text-amber-900 font-bold">Lv.1</span>
+                </a>
+
+                <!-- 2. 관리자 링크 (요구사항 1번) -->
+                <a href="/admin" id="navAdminLink" class="px-3.5 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-1.5 {% if request.path == '/admin' %}bg-rose-600 text-white shadow-sm shadow-rose-600/30{% else %}text-rose-800 hover:bg-rose-50 border border-rose-200 bg-rose-50/40{% endif %}">
+                    <i class="fa-solid fa-shield-halved text-rose-500 {% if request.path == '/admin' %}text-rose-200{% endif %}"></i>
+                    <span>관리자 센터</span>
+                    <span class="text-[10px] px-1.5 py-0.2 rounded bg-rose-200/80 text-rose-900 font-bold">Lv.2</span>
+                </a>
+            </nav>
+
+            <!-- 우측: 로그인 정보 & 권한 뱃지 & 액션 버튼 -->
+            <div class="flex items-center gap-3">
+                {% if current_user %}
+                    <!-- 로그인 상태 (유저명 + 권한 표시 - 요구사항 1번 & 제출 항목 1번) -->
+                    <div class="flex items-center gap-2.5 bg-amber-50/80 border border-amber-200/70 px-3.5 py-1.5 rounded-2xl shadow-sm">
+                        <div class="w-8 h-8 rounded-xl flex items-center justify-center 
+                            {% if current_user.role_level == 2 %}bg-rose-600 text-white
+                            {% elif current_user.role_level == 1 %}bg-amber-500 text-white
+                            {% else %}bg-emerald-600 text-white{% endif %}">
+                            <i class="fa-solid 
+                                {% if current_user.role_level == 2 %}fa-shield-halved
+                                {% elif current_user.role_level == 1 %}fa-crown
+                                {% else %}fa-seedling{% endif %} text-sm"></i>
+                        </div>
+                        <div class="flex flex-col">
+                            <div class="flex items-center gap-1.5">
+                                <span class="font-bold text-sm text-slate-800">{{ current_user.nickname }}</span>
+                                <span class="text-xs text-slate-400 font-normal">({{ current_user.username }})</span>
+                            </div>
+                            <!-- 권한 뱃지 (제출 항목: 권한 표기) -->
+                            <div class="flex items-center gap-1">
+                                {% if current_user.role_level == 2 %}
+                                    <span class="inline-flex items-center gap-1 text-[11px] font-extrabold px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 border border-rose-300 shadow-xs">
+                                        <i class="fa-solid fa-key text-[10px]"></i> 관리자 (Level 2)
+                                    </span>
+                                {% elif current_user.role_level == 1 %}
+                                    <span class="inline-flex items-center gap-1 text-[11px] font-extrabold px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300 shadow-xs">
+                                        <i class="fa-solid fa-crown text-[10px]"></i> 골드회원 (Level 1)
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center gap-1 text-[11px] font-extrabold px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-xs">
+                                        <i class="fa-solid fa-seedling text-[10px]"></i> 일반회원 (Level 0)
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="handleLogout()" class="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors" title="로그아웃">
+                        <i class="fa-solid fa-right-from-bracket text-base"></i>
+                    </button>
+                {% else %}
+                    <!-- 비로그인 상태 -->
+                    <button onclick="openModal('loginModal')" class="px-3.5 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-100/70 rounded-xl transition-all">
+                        <i class="fa-solid fa-arrow-right-to-bracket mr-1"></i> 로그인
+                    </button>
+                    <button onclick="openModal('registerModal')" class="px-4 py-2 text-sm font-bold text-white bg-amber-800 hover:bg-amber-900 rounded-xl shadow-md shadow-amber-900/20 transition-all">
+                        <i class="fa-solid fa-user-plus mr-1"></i> 회원가입
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <!-- 메인 컨텐츠 영역 -->
+    <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- 푸터 -->
+    <footer class="bg-white border-t border-amber-200/60 py-6 text-center text-xs text-amber-900/60">
+        <div class="max-w-7xl mx-auto px-4">
+            <p class="font-medium">☕ 카페이야기 - 접근 제어(RBAC) 실습 시스템</p>
+            <p class="mt-1 text-[11px] text-slate-400">일반유저(Lv.0) / 골드유저(Lv.1, 중간관리자) / 관리자(Lv.2, 운영자) 권한 제어</p>
+        </div>
+    </footer>
+
+    <!-- ======================= 모달 1: 로그인 모달 ======================= -->
+    <div id="loginModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-amber-100 relative animate-in fade-in zoom-in duration-200">
+            <button onclick="closeModal('loginModal')" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <div class="text-center mb-5">
+                <div class="w-12 h-12 bg-amber-100 text-amber-800 rounded-2xl flex items-center justify-center mx-auto mb-2.5 shadow-xs">
+                    <i class="fa-solid fa-mug-hot text-xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900">카페이야기 로그인</h3>
+                <p class="text-xs text-slate-500 mt-1">계정으로 로그인하여 등급별 서비스를 이용해보세요</p>
+            </div>
+
+            <!-- 빠른 테스트용 원클릭 로그인 버튼 (편의 기능) -->
+            <div class="mb-5 p-3 bg-amber-50 rounded-2xl border border-amber-200/80">
+                <div class="text-xs font-bold text-amber-900 mb-2 flex items-center justify-between">
+                    <span><i class="fa-solid fa-wand-magic-sparkles mr-1"></i> 빠른 테스트용 원클릭 로그인:</span>
+                    <span class="text-[10px] text-amber-700 font-normal">비번: 1234</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <button type="button" onclick="quickFillAndLogin('admin', '1234')" class="px-2 py-2 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-900 text-xs font-bold border border-rose-300 transition-all flex flex-col items-center gap-0.5">
+                        <i class="fa-solid fa-shield-halved text-rose-600"></i>
+                        <span>관리자 (Lv.2)</span>
+                    </button>
+                    <button type="button" onclick="quickFillAndLogin('golduser', '1234')" class="px-2 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 text-xs font-bold border border-amber-300 transition-all flex flex-col items-center gap-0.5">
+                        <i class="fa-solid fa-crown text-amber-600"></i>
+                        <span>골드회원 (Lv.1)</span>
+                    </button>
+                    <button type="button" onclick="quickFillAndLogin('user1', '1234')" class="px-2 py-2 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-900 text-xs font-bold border border-emerald-300 transition-all flex flex-col items-center gap-0.5">
+                        <i class="fa-solid fa-seedling text-emerald-600"></i>
+                        <span>일반회원 (Lv.0)</span>
+                    </button>
+                </div>
+            </div>
+
+            <form id="loginForm" onsubmit="handleLoginSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">아이디</label>
+                    <input type="text" id="loginUsername" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-600 text-sm" placeholder="아이디를 입력하세요">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">비밀번호</label>
+                    <input type="password" id="loginPassword" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-600 text-sm" placeholder="비밀번호를 입력하세요">
+                </div>
+                <button type="submit" id="loginSubmitBtn" class="w-full py-3 bg-amber-800 hover:bg-amber-900 text-white font-bold rounded-xl shadow-md transition-all text-sm">
+                    로그인
+                </button>
+            </form>
+
+            <div class="mt-4 text-center">
+                <span class="text-xs text-slate-500">아직 회원이 아니신가요?</span>
+                <button onclick="switchModal('loginModal', 'registerModal')" class="text-xs text-amber-800 font-bold ml-1 hover:underline">
+                    회원가입하기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================= 모달 2: 회원가입 모달 ======================= -->
+    <div id="registerModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-amber-100 relative">
+            <button onclick="closeModal('registerModal')" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <div class="text-center mb-5">
+                <div class="w-12 h-12 bg-emerald-100 text-emerald-800 rounded-2xl flex items-center justify-center mx-auto mb-2.5 shadow-xs">
+                    <i class="fa-solid fa-user-plus text-xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900">새 회원가입</h3>
+                <p class="text-xs text-emerald-700 font-bold mt-1 bg-emerald-50 py-1 px-3 rounded-lg inline-block border border-emerald-200">
+                    <i class="fa-solid fa-seedling mr-1"></i> 최초 가입 시 [일반회원 Lv.0] 으로 자동 등록됩니다.
+                </p>
+            </div>
+
+            <form id="registerForm" onsubmit="handleRegisterSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">아이디 (3자 이상)</label>
+                    <input type="text" id="regUsername" required minlength="3" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-600 text-sm" placeholder="예: coffee_man">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">비밀번호 (4자 이상)</label>
+                    <input type="password" id="regPassword" required minlength="4" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-600 text-sm" placeholder="비밀번호">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">닉네임</label>
+                    <input type="text" id="regNickname" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-600 text-sm" placeholder="예: 모카라떼">
+                </div>
+                <button type="submit" id="regSubmitBtn" class="w-full py-3 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl shadow-md transition-all text-sm">
+                    회원가입 완료 (일반 등급 자동 부여)
+                </button>
+            </form>
+
+            <div class="mt-4 text-center">
+                <span class="text-xs text-slate-500">이미 계정이 있으신가요?</span>
+                <button onclick="switchModal('registerModal', 'loginModal')" class="text-xs text-amber-800 font-bold ml-1 hover:underline">
+                    로그인하기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 토스트 알림창 -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 hidden max-w-sm px-4 py-3 rounded-2xl shadow-xl border text-sm font-medium transition-all duration-300 flex items-center gap-2"></div>
+
+    <!-- 공통 스크립트 -->
+    <script>
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function switchModal(fromId, toId) {
+            closeModal(fromId);
+            openModal(toId);
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.className = 'fixed bottom-6 right-6 z-50 max-w-sm px-4 py-3 rounded-2xl shadow-xl border text-sm font-medium transition-all duration-300 flex items-center gap-2.5 ' + 
+                (type === 'success' ? 'bg-emerald-800 text-white border-emerald-600' :
+                 type === 'error' ? 'bg-rose-800 text-white border-rose-600' :
+                 'bg-slate-800 text-white border-slate-700');
+            
+            const icon = type === 'success' ? '<i class="fa-solid fa-circle-check text-emerald-300"></i>' :
+                         type === 'error' ? '<i class="fa-solid fa-triangle-exclamation text-rose-300"></i>' :
+                         '<i class="fa-solid fa-circle-info text-blue-300"></i>';
+            toast.innerHTML = icon + `<span>${message}</span>`;
+            toast.classList.remove('hidden');
+            setTimeout(() => { toast.classList.add('hidden'); }, 3000);
+        }
+
+        // 빠른 로그인 버튼
+        function quickFillAndLogin(u, p) {
+            document.getElementById('loginUsername').value = u;
+            document.getElementById('loginPassword').value = p;
+            document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+        }
+
+        // 로그인 전송
+        async function handleLoginSubmit(e) {
+            e.preventDefault();
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            const btn = document.getElementById('loginSubmitBtn');
+            btn.disabled = true;
+            btn.innerText = '로그인 중...';
+
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    localStorage.setItem('cafe_token', data.token);
+                    localStorage.setItem('cafe_user', JSON.stringify(data.user));
+                    showToast(data.message, 'success');
+                    setTimeout(() => { window.location.reload(); }, 600);
+                } else {
+                    showToast(data.message || '로그인 실패', 'error');
+                }
+            } catch (err) {
+                showToast('로그인 요청 중 오류가 발생했습니다: ' + err, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = '로그인';
+            }
+        }
+
+        // 회원가입 전송
+        async function handleRegisterSubmit(e) {
+            e.preventDefault();
+            const username = document.getElementById('regUsername').value.trim();
+            const password = document.getElementById('regPassword').value.trim();
+            const nickname = document.getElementById('regNickname').value.trim();
+            const btn = document.getElementById('regSubmitBtn');
+            btn.disabled = true;
+            btn.innerText = '회원가입 처리 중...';
+
+            try {
+                const res = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password, nickname })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    localStorage.setItem('cafe_token', data.token);
+                    localStorage.setItem('cafe_user', JSON.stringify(data.user));
+                    showToast(data.message, 'success');
+                    setTimeout(() => { window.location.href = '/'; }, 800);
+                } else {
+                    showToast(data.message || '회원가입 실패', 'error');
+                }
+            } catch (err) {
+                showToast('회원가입 처리 중 오류 발생: ' + err, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = '회원가입 완료';
+            }
+        }
+
+        // 로그아웃
+        async function handleLogout() {
+            try {
+                await fetch('/api/auth/logout', { method: 'POST' });
+            } catch (e) {}
+            localStorage.removeItem('cafe_token');
+            localStorage.removeItem('cafe_user');
+            showToast('로그아웃되었습니다.', 'info');
+            setTimeout(() => { window.location.href = '/'; }, 500);
+        }
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

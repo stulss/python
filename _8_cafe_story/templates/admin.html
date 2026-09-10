@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block title %}관리자 센터 - 카페이야기{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- 관리자 헤더 배너 -->
+    <section class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-rose-700 via-rose-800 to-slate-900 p-8 sm:p-10 text-white shadow-xl shadow-rose-900/20 border border-rose-800">
+        <div class="relative z-10 max-w-2xl">
+            <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/20 backdrop-blur-md text-rose-200 text-xs font-extrabold mb-3 border border-white/20">
+                <i class="fa-solid fa-shield-halved"></i> 관리자(Level 2) 전용 페이지
+            </div>
+            <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight leading-tight">
+                카페이야기 운영자 센터<br>(User & Role Management)
+            </h1>
+            <p class="mt-3 text-rose-100 text-sm leading-relaxed">
+                전체 회원의 정보를 불러와서 <strong>등급 수정(일반: 0, 골드: 1, 관리자: 2)</strong> 및 <strong>회원 삭제</strong>를 관리합니다.<br>
+                접근 제어(RBAC)에 의해 관리자(Lv.2) 계정으로 로그인한 경우에만 본 화면에 접근할 수 있습니다.
+            </p>
+            <div class="mt-4 flex items-center gap-2 text-xs">
+                <span class="bg-rose-950/60 px-3 py-1 rounded-lg border border-rose-600 font-bold">
+                    현재 운영자: {{ current_user.nickname }} ({{ current_user.username }})
+                </span>
+            </div>
+        </div>
+        <div class="absolute -right-8 -bottom-8 w-64 h-64 bg-rose-500/20 rounded-full blur-3xl pointer-events-none"></div>
+    </section>
+
+    <!-- 통계 카드 그리드 -->
+    <section class="grid grid-cols-2 sm:grid-cols-4 gap-4" id="statsContainer">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+            <span class="text-xs text-slate-500 font-semibold">총 회원수</span>
+            <div class="text-2xl font-black text-slate-900 mt-1" id="statTotal">-</div>
+        </div>
+        <div class="bg-white p-5 rounded-2xl border border-emerald-200 shadow-xs">
+            <span class="text-xs text-emerald-700 font-semibold flex items-center gap-1">
+                <i class="fa-solid fa-seedling"></i> 일반회원 (Lv.0)
+            </span>
+            <div class="text-2xl font-black text-emerald-800 mt-1" id="statUser">-</div>
+        </div>
+        <div class="bg-white p-5 rounded-2xl border border-amber-200 shadow-xs">
+            <span class="text-xs text-amber-800 font-semibold flex items-center gap-1">
+                <i class="fa-solid fa-crown"></i> 골드회원 (Lv.1)
+            </span>
+            <div class="text-2xl font-black text-amber-900 mt-1" id="statGold">-</div>
+        </div>
+        <div class="bg-white p-5 rounded-2xl border border-rose-200 shadow-xs">
+            <span class="text-xs text-rose-700 font-semibold flex items-center gap-1">
+                <i class="fa-solid fa-shield-halved"></i> 관리자 (Lv.2)
+            </span>
+            <div class="text-2xl font-black text-rose-800 mt-1" id="statAdmin">-</div>
+        </div>
+    </section>
+
+    <!-- 회원 정보 테이블 (요구사항 5번: 회원정보 불러와서 수정, 삭제 기능) -->
+    <section class="bg-white rounded-3xl p-6 sm:p-8 border border-amber-200/60 shadow-xs">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-5 border-b border-slate-100 gap-4">
+            <div>
+                <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-users text-rose-600"></i> 전체 회원 정보 및 권한 관리
+                </h2>
+                <p class="text-xs text-slate-500 mt-0.5">회원의 등급을 변경(0: 일반, 1: 골드, 2: 관리자)하거나 회원을 삭제할 수 있습니다.</p>
+            </div>
+            <div>
+                <button onclick="loadUsers()" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all flex items-center gap-1.5">
+                    <i class="fa-solid fa-rotate"></i> 새로고침
+                </button>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto mt-6">
+            <table class="w-full text-left text-sm">
+                <thead>
+                    <tr class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 text-xs">
+                        <th class="py-3 px-4">UID</th>
+                        <th class="py-3 px-4">아이디</th>
+                        <th class="py-3 px-4">닉네임</th>
+                        <th class="py-3 px-4">현재 등급 (권한)</th>
+                        <th class="py-3 px-4">가입일시</th>
+                        <th class="py-3 px-4 text-center">등급 변경 (수정)</th>
+                        <th class="py-3 px-4 text-center">관리 (삭제)</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody" class="divide-y divide-slate-100 text-xs">
+                    <tr>
+                        <td colspan="7" class="py-8 text-center text-slate-400">회원 정보를 불러오는 중...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function loadUsers() {
+        const tbody = document.getElementById('userTableBody');
+        try {
+            const res = await fetch('/api/admin/users');
+            const data = await res.json();
+            if (!data.success) {
+                tbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-rose-500">${data.message || '조회 실패'}</td></tr>`;
+                return;
+            }
+
+            // 통계 반영
+            document.getElementById('statTotal').innerText = data.stats.total;
+            document.getElementById('statUser').innerText = data.stats.user_count;
+            document.getElementById('statGold').innerText = data.stats.gold_count;
+            document.getElementById('statAdmin').innerText = data.stats.admin_count;
+
+            const currentAdminId = {{ current_user.id }};
+
+            tbody.innerHTML = data.users.map(u => {
+                const isSelf = u.id === currentAdminId;
+                const roleBadgeClass = u.role_level === 2 ? 'bg-rose-100 text-rose-800 border-rose-300' :
+                                       u.role_level === 1 ? 'bg-amber-100 text-amber-900 border-amber-400' :
+                                       'bg-emerald-100 text-emerald-800 border-emerald-300';
+                const roleIcon = u.role_level === 2 ? 'fa-shield-halved' :
+                                 u.role_level === 1 ? 'fa-crown' : 'fa-seedling';
+
+                return `
+                    <tr class="hover:bg-amber-50/30 transition-colors">
+                        <td class="py-3.5 px-4 font-mono text-slate-500">${u.id}</td>
+                        <td class="py-3.5 px-4 font-bold text-slate-800">${u.username} ${isSelf ? '<span class="text-[10px] text-rose-600 font-bold">(본인)</span>' : ''}</td>
+                        <td class="py-3.5 px-4 text-slate-700">${u.nickname}</td>
+                        <td class="py-3.5 px-4">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-extrabold border ${roleBadgeClass}">
+                                <i class="fa-solid ${roleIcon}"></i> ${u.role_name} (Lv.${u.role_level})
+                            </span>
+                        </td>
+                        <td class="py-3.5 px-4 text-slate-500 font-mono">${u.created_at}</td>
+                        
+                        <!-- 등급 변경 셀렉트 & 버튼 (수정) -->
+                        <td class="py-3.5 px-4 text-center">
+                            <div class="inline-flex items-center gap-1.5">
+                                <select id="roleSelect_${u.id}" class="px-2.5 py-1 rounded-lg border border-slate-300 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-amber-600" ${isSelf ? 'disabled title="본인 권한은 강등할 수 없습니다."' : ''}>
+                                    <option value="0" ${u.role_level === 0 ? 'selected' : ''}>일반회원 (0)</option>
+                                    <option value="1" ${u.role_level === 1 ? 'selected' : ''}>골드회원 (1)</option>
+                                    <option value="2" ${u.role_level === 2 ? 'selected' : ''}>관리자 (2)</option>
+                                </select>
+                                <button onclick="updateRole(${u.id}, '${u.nickname}')" ${isSelf ? 'disabled class="px-2.5 py-1 bg-slate-200 text-slate-400 rounded-lg text-xs font-bold cursor-not-allowed"' : 'class="px-2.5 py-1 bg-amber-800 hover:bg-amber-900 text-white rounded-lg text-xs font-bold shadow-xs transition-all"'}>
+                                    변경
+                                </button>
+                            </div>
+                        </td>
+
+                        <!-- 회원 삭제 버튼 -->
+                        <td class="py-3.5 px-4 text-center">
+                            <button onclick="deleteUser(${u.id}, '${u.nickname}')" ${isSelf ? 'disabled class="px-2.5 py-1 bg-slate-200 text-slate-400 rounded-lg text-xs font-bold cursor-not-allowed"' : 'class="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow-xs transition-all"'}>
+                                <i class="fa-solid fa-trash-can mr-1"></i> 삭제
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        } catch (e) {
+            tbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-rose-500">데이터 로드 실패: ${e}</td></tr>`;
+        }
+    }
+
+    // 회원 등급 변경 API 호출
+    async function updateRole(userId, nickname) {
+        const select = document.getElementById(`roleSelect_${userId}`);
+        const newRole = parseInt(select.value);
+
+        const roleNames = { 0: '일반회원(0)', 1: '골드회원(1)', 2: '관리자(2)' };
+        if (!confirm(`[${nickname}] 님의 권한을 '${roleNames[newRole]}' (으)로 변경하시겠습니까?`)) return;
+
+        try {
+            const res = await fetch(`/api/admin/users/${userId}/role`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ role_level: newRole })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.message, 'success');
+                loadUsers();
+            } else {
+                showToast(data.message || '등급 변경 실패', 'error');
+            }
+        } catch (e) {
+            showToast('오류 발생: ' + e, 'error');
+        }
+    }
+
+    // 회원 삭제 API 호출
+    async function deleteUser(userId, nickname) {
+        if (!confirm(`정말로 회원 [${nickname}] 님을 완전히 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+
+        try {
+            const res = await fetch(`/api/admin/users/${userId}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.message, 'success');
+                loadUsers();
+            } else {
+                showToast(data.message || '삭제 실패', 'error');
+            }
+        } catch (e) {
+            showToast('오류 발생: ' + e, 'error');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadUsers);
+</script>
+{% endblock %}

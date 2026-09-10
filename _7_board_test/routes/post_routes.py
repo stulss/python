@@ -4,7 +4,7 @@ from flask import Blueprint, g, jsonify, request
 
 post_bp = Blueprint("posts", __name__, url_prefix="/api")
 
-CATEGORIES = ["공지", "자유", "질문", "팁", "정보"]
+CATEGORIES = ["공지", "자유", "질문", "팁", "정보", "보안"]
 
 
 def format_post(row):

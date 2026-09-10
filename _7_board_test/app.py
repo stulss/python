@@ -6,6 +6,7 @@ from flask_cors import CORS
 from routes.auth_routes import auth_bp
 from routes.post_routes import post_bp
 from routes.openapi_routes import openapi_bp
+from routes.security_routes import security_bp
 
 # Flask 앱 생성 (templates와 static 폴더 명시)
 app = Flask(
@@ -22,12 +23,19 @@ CORS(app, resources={r"/api/*": {"origins": "*"}})
 app.register_blueprint(auth_bp)
 app.register_blueprint(post_bp)
 app.register_blueprint(openapi_bp)
+app.register_blueprint(security_bp)
 
 
 @app.route("/")
 def index():
   """게시판 메인 웹 페이지 (Tailwind CSS 반응형 UI)"""
   return render_template("index.html")
+
+
+@app.route("/dashboard")
+def dashboard():
+  """보안 대시보드 — n8n 이 저장한 허용/거부 기록을 보여준다."""
+  return render_template("dashboard.html")
 
 
 @app.errorhandler(404)
