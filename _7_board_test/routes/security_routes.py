@@ -93,17 +93,19 @@ def create_security_event():
       cursor.execute(
           """
                 INSERT INTO security_events
-                    (student, src_ip, fail_count, decision, severity, reason, rule_id, generated_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    (student, src_ip, level, rule, rule_id, fail_count, decision, severity, reason, generated_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """,
           (
               student[:50],
               src_ip[:45],
+              int(data.get("level") or 0),
+              data.get("rule"),
+              data.get("rule_id") or data.get("rule"),
               int(data.get("fail_count") or 0),
               decision,
               data.get("severity", "Low"),
               data.get("reason"),
-              data.get("rule"),
               data.get("generated_at"),
           ),
       )

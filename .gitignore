@@ -3,8 +3,17 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Environments & OS
+# Environments & Virtualenv
 .env
-.env.local
+.env.*
+!.env.example
+.venv/
+venv/
+env/
+ENV/
+
+# OS & Editor files
 .DS_Store
 Thumbs.db
+.vscode/
+*.log

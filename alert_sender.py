@@ -14,7 +14,7 @@ import requests  # pip install requests
 
 # ── 설정: 본인 값으로 바꿀 것 ─────────────────────────────
 STUDENT = "홍주형"  # 채점 증적 — 반드시 본인 식별자로 바꾼다
-N8N_WEBHOOK_URL = "http://localhost:5678/webhook/7e556d53-a1db-48d5-b35a-2a7dfff408b9"
+N8N_WEBHOOK_URL = "http://localhost:5678/webhook/d5188867-b93b-4842-bc1f-a136bbd5f01a"
 TIMEOUT = 10  # 초
 
 # 거부(레벨 10 이상)와 허용(레벨 10 미만)이 모두 섞이도록 구성한다.

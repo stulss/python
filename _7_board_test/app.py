@@ -65,6 +65,6 @@ if __name__ == "__main__":
   except Exception as e:
     print(f"[Warning] DB 초기화 중 오류: {e}")
 
-  print(f"🚀 Flask RESTful Board Server running at http://127.0.0.1:{Config.PORT}")
+  print(f"[START] Flask RESTful Board Server running at http://127.0.0.1:{Config.PORT}")
   app.run(host="0.0.0.0", port=Config.PORT, debug=Config.DEBUG)
 
