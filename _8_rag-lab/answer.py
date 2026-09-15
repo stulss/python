@@ -1,7 +1,7 @@
 # answer.py — 근거 첨부 답변 + 폴백 (R4)
 from rag_config import collection
 
-THRESHOLD = 0.3   # 이 거리보다 멀면 "관련 규정 없음"으로 판단 (실험으로 §7에서 조정)
+THRESHOLD = 0.7   # 이 거리보다 멀면 "관련 규정 없음"으로 판단 (실험으로 §7에서 조정)
 
 print("보안 FAQ 봇입니다. 빈 입력(Enter)이면 종료.")
 while True:

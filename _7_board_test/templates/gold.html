@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>골드 등급 전용 — 모던 게시판</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
+
+  {% include 'partials/_nav.html' %}
+
+  <main class="max-w-5xl mx-auto px-4 py-6 flex-1 w-full">
+
+    <!-- 등급 확인 중 -->
+    <div id="loading-view" class="text-center py-20 text-gray-400 text-sm">
+      등급을 확인하는 중…
+    </div>
+
+    <!-- 등급 부족 시 이 화면으로 바뀐다 -->
+    {% include 'partials/_denied.html' %}
+
+    <!-- 골드 등급 이상만 보는 내용 -->
+    <div id="protected-view" class="hidden space-y-6">
+
+      <!-- 환영 배너 -->
+      <section class="rounded-2xl bg-gradient-to-r from-amber-400 to-yellow-500 text-white px-6 py-8 shadow-sm">
+        <div class="flex items-center gap-3">
+          <span class="text-4xl" aria-hidden="true">🏅</span>
+          <div>
+            <h2 class="text-2xl font-bold">골드 회원 전용 라운지</h2>
+            <p class="text-amber-50 text-sm mt-1">
+              환영합니다, <b id="gold-name">회원</b>님 ·
+              <span id="gold-role-badge" class="bg-white/25 px-2 py-0.5 rounded-full text-xs font-medium">골드</span>
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 혜택 카드 -->
+      <section>
+        <h3 class="font-semibold mb-3">골드 등급 혜택</h3>
+        <div class="grid gap-4 sm:grid-cols-3">
+          <div class="bg-white rounded-xl shadow-sm p-5 border-t-4 border-amber-400">
+            <div class="text-2xl mb-2" aria-hidden="true">📂</div>
+            <h4 class="font-semibold text-sm">전용 자료 열람</h4>
+            <p class="text-xs text-gray-500 mt-1">골드 회원만 볼 수 있는 게시글을 읽을 수 있습니다.</p>
+          </div>
+          <div class="bg-white rounded-xl shadow-sm p-5 border-t-4 border-amber-400">
+            <div class="text-2xl mb-2" aria-hidden="true">⚡</div>
+            <h4 class="font-semibold text-sm">우선 문의 응대</h4>
+            <p class="text-xs text-gray-500 mt-1">문의를 남기면 일반 회원보다 먼저 답변을 받습니다.</p>
+          </div>
+          <div class="bg-white rounded-xl shadow-sm p-5 border-t-4 border-amber-400">
+            <div class="text-2xl mb-2" aria-hidden="true">🎟️</div>
+            <h4 class="font-semibold text-sm">이벤트 우선 참여</h4>
+            <p class="text-xs text-gray-500 mt-1">한정 이벤트에 먼저 신청할 수 있습니다.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 골드 전용 게시글 -->
+      <section class="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div class="p-4 flex items-center justify-between border-b border-gray-100">
+          <h3 class="font-semibold">골드 전용 게시글</h3>
+          <span class="text-xs text-gray-400">카테고리: 골드</span>
+        </div>
+        <div id="gold-posts" class="divide-y divide-gray-100">
+          <p class="px-4 py-8 text-center text-gray-400 text-sm">불러오는 중…</p>
+        </div>
+      </section>
+
+      <p class="text-xs text-gray-400">
+        데이터 출처: <code>GET /api/gold/posts</code> — 이 API 는 서버에서도 골드 등급을 검사합니다.
+        (주소창에 직접 입력해도 등급이 없으면 403)
+      </p>
+    </div>
+  </main>
+
+  <script>
+    const REQUIRED_ROLE = 'gold';
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g,
+      c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    const token = () => localStorage.getItem('token');
+    const authH = () => ({ 'Authorization': 'Bearer ' + token() });
+    const hide = (id) => document.getElementById(id).classList.add('hidden');
+
+    async function checkGrade() {
+      // ① 토큰이 아예 없으면 서버에 물어볼 것도 없다
+      if (!token()) {
+        hide('loading-view');
+        showDenied({ required: REQUIRED_ROLE, current: null });
+        return;
+      }
+
+      // ② 내 등급을 서버에 확인한다(토큰은 자동 전송되지 않으므로 직접 붙인다)
+      let me;
+      try {
+        const res = await fetch('/api/auth/me', { headers: authH() });
+        hide('loading-view');
+        if (res.status === 401) {       // 토큰 만료·위조
+          localStorage.removeItem('token');
+          localStorage.removeItem('username');
+          showDenied({ required: REQUIRED_ROLE, current: null });
+          return;
+        }
+        me = await res.json();
+      } catch (e) {
+        hide('loading-view');
+        showDenied({ required: REQUIRED_ROLE, current: null,
+                     message: '서버와 통신하지 못했습니다. 잠시 후 다시 시도해 주세요.' });
+        return;
+      }
+
+      // ③ 등급이 모자라면 예외 화면 (admin 은 gold 보다 높아 통과한다)
+      if (!me.is_gold) {
+        showDenied({ required: REQUIRED_ROLE, current: me.role });
+        return;
+      }
+
+      document.getElementById('gold-name').textContent = me.username;
+      document.getElementById('gold-role-badge').textContent = me.role_label;
+      showProtected();
+      loadGoldPosts();
+    }
+
+    async function loadGoldPosts() {
+      const box = document.getElementById('gold-posts');
+      const res = await fetch('/api/gold/posts', { headers: authH() });
+
+      if (!res.ok) {   // 서버가 막은 경우 — 화면만 뚫려도 데이터는 못 가져간다
+        const d = await res.json().catch(() => ({}));
+        showDenied({ required: d.required_role || REQUIRED_ROLE,
+                     current: d.current_role || null });
+        return;
+      }
+
+      const posts = (await res.json()).posts || [];
+      if (!posts.length) {
+        box.innerHTML = `<p class="px-4 py-10 text-center text-gray-400 text-sm">
+          아직 골드 전용 게시글이 없습니다.<br>
+          <span class="text-xs">게시판에서 카테고리를 '골드' 로 정해 글을 쓰면 여기에 모입니다.</span>
+        </p>`;
+        return;
+      }
+      box.innerHTML = posts.map(p => `
+        <article class="px-4 py-3 hover:bg-amber-50/40 transition">
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-medium shrink-0">골드</span>
+            <h4 class="font-medium truncate">${esc(p.title)}</h4>
+          </div>
+          <p class="text-sm text-gray-500 mt-1 line-clamp-2">${esc(p.content)}</p>
+          <p class="text-xs text-gray-400 mt-1">${esc(p.author)}</p>
+        </article>`).join('');
+    }
+
+    checkGrade();
+  </script>
+</body>
+</html>

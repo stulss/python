@@ -1,19 +1,2 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
-
-# Environments & Virtualenv
 .env
-.env.*
-!.env.example
 .venv/
-venv/
-env/
-ENV/
-
-# OS & Editor files
-.DS_Store
-Thumbs.db
-.vscode/
-*.log

@@ -1,70 +1,95 @@
-import os
+"""엔트리포인트 — 앱 팩토리(create_app) 패턴.
+
+구조
+  config.py       설정(.env 로딩)
+  extensions.py   db · jwt 인스턴스
+  models/         User · Post · SecurityEvent
+  controllers/    page · auth · post · security · public (블루프린트)
+  templates/      화면 (partials/_nav.html = 공통 반응형 헤더)
+
+실행:  python app.py   →  http://localhost:5000
+"""
+from flask import Flask, jsonify, request
+from sqlalchemy import inspect, text
+
 from config import Config
-from db import init_db
-from flask import Flask, jsonify, render_template
-from flask_cors import CORS
-from routes.auth_routes import auth_bp
-from routes.post_routes import post_bp
-from routes.openapi_routes import openapi_bp
-from routes.security_routes import security_bp
-
-# Flask 앱 생성 (templates와 static 폴더 명시)
-app = Flask(
-    __name__,
-    template_folder="templates",
-    static_folder="static",
-)
-app.config.from_object(Config)
-
-# CORS 설정 (RESTful API 지원)
-CORS(app, resources={r"/api/*": {"origins": "*"}})
-
-# Blueprint 등록
-app.register_blueprint(auth_bp)
-app.register_blueprint(post_bp)
-app.register_blueprint(openapi_bp)
-app.register_blueprint(security_bp)
+from controllers import all_blueprints
+from extensions import db, jwt
+from models import BlockedIP
 
 
-@app.route("/")
-def index():
-  """게시판 메인 웹 페이지 (Tailwind CSS 반응형 UI)"""
-  return render_template("index.html")
+def _client_ip():
+  """요청의 실제 클라이언트 IP. 프록시(n8n·nginx) 뒤면 X-Forwarded-For 첫 홉을 신뢰.
+  (랩 한정 규칙 — 실서비스는 신뢰 프록시 목록으로 검증해야 스푸핑을 막는다.)"""
+  xff = request.headers.get('X-Forwarded-For', '')
+  if xff:
+    return xff.split(',')[0].strip()
+  return request.remote_addr or ''
 
 
-@app.route("/dashboard")
-def dashboard():
-  """보안 대시보드 — n8n 이 저장한 허용/거부 기록을 보여준다."""
-  return render_template("dashboard.html")
+def _ensure_schema():
+  """기존 users 표에 role 관련 컬럼이 없으면 추가(가벼운 자동 마이그레이션).
+
+  db.create_all() 은 '없는 표'만 만들고 '기존 표'는 손대지 않는다. 이미 운영 중인
+  users 표에 role/감사 컬럼을 더하려면 ALTER 가 필요하므로, 여기서 컬럼 유무를
+  검사해 없을 때만 한 번 추가한다(있으면 조용히 통과 — 여러 번 켜도 안전)."""
+  cols = {c['name'] for c in inspect(db.engine).get_columns('users')}
+  adds = {
+      'role': "ALTER TABLE users ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'user'",
+      'role_granted_by': "ALTER TABLE users ADD COLUMN role_granted_by VARCHAR(80) NULL",
+      'role_granted_at': "ALTER TABLE users ADD COLUMN role_granted_at DATETIME NULL",
+      'role_reason': "ALTER TABLE users ADD COLUMN role_reason VARCHAR(200) NULL",
+      # ── 계정 잠금(브루트포스 대응) ──
+      'is_locked': "ALTER TABLE users ADD COLUMN is_locked TINYINT(1) NOT NULL DEFAULT 0",
+      'locked_at': "ALTER TABLE users ADD COLUMN locked_at DATETIME NULL",
+      'lock_reason': "ALTER TABLE users ADD COLUMN lock_reason VARCHAR(200) NULL",
+      'failed_logins': "ALTER TABLE users ADD COLUMN failed_logins INT NOT NULL DEFAULT 0",
+  }
+  with db.engine.begin() as conn:
+    for name, ddl in adds.items():
+      if name not in cols:
+        conn.execute(text(ddl))
 
 
-@app.errorhandler(404)
-def not_found(e):
-  return (
-      jsonify(
-          {"success": False, "message": "요청한 리소스를 찾을 수 없습니다."}
-      ),
-      404,
-  )
+def create_app(config_class=Config):
+  app = Flask(__name__)
+  app.config.from_object(config_class)
+
+  # 확장 초기화
+  db.init_app(app)
+  jwt.init_app(app)
+
+  # 컨트롤러(블루프린트) 등록
+  for bp in all_blueprints:
+    app.register_blueprint(bp)
+
+  # 테이블 생성 (models 를 import 한 뒤여야 한다 — controllers 가 이미 import 함)
+  with app.app_context():
+    db.create_all()
+    _ensure_schema()   # 기존 users 표에 role 컬럼 보강
+
+  @app.before_request
+  def _block_ip_guard():
+    """실차단(active response): 차단된 IP 의 요청은 앱에 닿기 전에 403 으로 되돌린다.
+
+    - 관리자 API(/api/admin/*) 는 예외 — 그래야 운영자·n8n 이 차단/해제를 계속 할 수 있다
+      (자기 자신을 잠가 복구 불능이 되는 것을 막는 안전장치).
+    - 매 요청 blocked_ips 표를 조회한다. 랩 규모에선 충분하고, 실서비스는
+      캐시(예: Redis)나 방화벽(nftables) 계층으로 올려야 한다."""
+    if request.path.startswith('/api/admin'):
+      return None
+    ip = _client_ip()
+    if ip and db.session.get(BlockedIP, ip):
+      return jsonify({'msg': '차단된 IP 입니다(관리자에게 문의).', 'ip': ip, 'blocked': True}), 403
+    return None
+
+  return app
 
 
-@app.errorhandler(500)
-def server_error(e):
-  return (
-      jsonify(
-          {"success": False, "message": f"서버 내부 오류가 발생했습니다: {e}"}
-      ),
-      500,
-  )
+app = create_app()
 
 
-if __name__ == "__main__":
-  # 애플리케이션 시작 시 DB 및 테이블 자동 생성
-  try:
-    init_db()
-  except Exception as e:
-    print(f"[Warning] DB 초기화 중 오류: {e}")
-
-  print(f"[START] Flask RESTful Board Server running at http://127.0.0.1:{Config.PORT}")
-  app.run(host="0.0.0.0", port=Config.PORT, debug=Config.DEBUG)
-
+if __name__ == '__main__':
+  # host='0.0.0.0' 이면 같은 공유기의 다른 기기에서도 접속 가능.
+  # 도커 안 n8n 에서는 http://host.docker.internal:5000 으로 부른다.
+  app.run(debug=True, host='0.0.0.0', port=5000)
