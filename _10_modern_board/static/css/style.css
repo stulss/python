@@ -1,0 +1,139 @@
+/* ==========================================================================
+   SecBoard - Production Modern Dark UI (Clean & Authentic Engineering Design)
+   Inspired by: Linear, Vercel, Datadog & GitHub Dark
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+    --bg-main: #090d16;
+    --bg-console: #0e1320;
+    --bg-panel: #111728;
+    --bg-card: #131b2e;
+    --bg-card-hover: #17223b;
+    --border-subtle: #1e293b;
+    --border-highlight: #334155;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --accent-indigo: #6366f1;
+    --accent-blue: #3b82f6;
+    --accent-emerald: #10b981;
+    --accent-amber: #f59e0b;
+    --accent-rose: #f43f5e;
+}
+
+body {
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    letter-spacing: -0.01em;
+    -webkit-font-smoothing: antialiased;
+}
+
+.font-mono-code {
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* 메인 셸 프레임 (절제된 슬레이트 콘솔) */
+.console-bezel {
+    background: var(--bg-console);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
+}
+
+/* 내부 패널 */
+.console-panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+}
+
+/* 게시글 카드 */
+.matrix-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    transition: all 0.15s ease-in-out;
+    position: relative;
+}
+
+.matrix-card:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--border-highlight);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px -6px rgba(0, 0, 0, 0.4);
+}
+
+/* 상단 고정 / 주요 글 뱃지 & 스타일 (과한 네온 대신 세련된 엑센트) */
+.matrix-card.featured-post {
+    border-color: rgba(99, 102, 241, 0.35);
+    background: linear-gradient(180deg, rgba(30, 27, 75, 0.25) 0%, rgba(19, 27, 46, 1) 100%);
+}
+
+.matrix-card.featured-post:hover {
+    border-color: rgba(129, 140, 248, 0.5);
+}
+
+/* 세그먼트 버튼 컨트롤 */
+.segment-btn {
+    padding: 6px 13px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 7px;
+    color: var(--text-secondary);
+    transition: all 0.15s ease;
+}
+
+.segment-btn:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.segment-btn.active {
+    background: #1e293b;
+    color: #ffffff;
+    border: 1px solid #334155;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* 텍스트 2줄 자르기 (Line Clamp) */
+.line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* 모달 백드롭 */
+.modal-backdrop {
+    background-color: rgba(5, 8, 15, 0.75);
+    backdrop-filter: blur(6px);
+}
+
+/* 스크롤바 */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #090d16;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #232d42;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #334155;
+}

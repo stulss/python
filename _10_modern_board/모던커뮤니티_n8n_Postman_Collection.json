@@ -1,0 +1,153 @@
+{
+  "info": {
+    "_postman_id": "7f8a1234-5678-4321-abcd-ef0123456789",
+    "name": "모던커뮤니티 SOAR 실습",
+    "description": "모던커뮤니티 SOAR 실습 제출용 포스트맨 컬렉션 (n8n 폴더 포함)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "n8n",
+      "description": "n8n 자동화 및 이상권한 탐지/회수 API 모음",
+      "item": [
+        {
+          "name": "a) 권한회수",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "vivjXzholnhdQdYYqmM8mcECfd3vv_R36lugiTbis9s"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"lsy2\",\n  \"rule\": \"테스트 룰\",\n  \"student\": \"lsy\",\n  \"src_ip\": \"127.0.0.1\",\n  \"granted_by\": \"테스트 승인 관리자\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/admin/revoke",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "admin",
+                "revoke"
+              ]
+            },
+            "description": "이상 권한을 가진 계정의 역할을 user 로 강등 및 회수 (Status: 200 OK)"
+          },
+          "response": []
+        },
+        {
+          "name": "b) 권한승인",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "vivjXzholnhdQdYYqmM8mcECfd3vv_R36lugiTbis9s"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"lsy2\",\n  \"role\": \"admin\",\n  \"reason\": \"bootstrap admin\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/admin/grant",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "admin",
+                "grant"
+              ]
+            },
+            "description": "대상 계정에게 관리자(admin) 권한 부여 (과잉 권한 유발 테스트용)"
+          },
+          "response": []
+        },
+        {
+          "name": "c) n8n수신기",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user\": \"lsy2\",\n  \"rule\": \"UNAUTHORIZED_ADMIN\",\n  \"student\": \"lsy\",\n  \"src_ip\": \"127.0.0.1\",\n  \"granted_by\": \"manual\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5678/webhook/5297c4cd-f3a1-48d5-8e88-efb0e21b7367",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5678",
+              "path": [
+                "webhook",
+                "5297c4cd-f3a1-48d5-8e88-efb0e21b7367"
+              ]
+            },
+            "description": "n8n 자동 회수 워크플로우 Webhook 트리거 (Status: 200 OK)"
+          },
+          "response": []
+        },
+        {
+          "name": "d) graylog 수신확인",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/security/events?student=admin&limit=5",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "security",
+                "events"
+              ],
+              "query": [
+                {
+                  "key": "student",
+                  "value": "admin"
+                },
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            },
+            "description": "게시판 및 SIEM 연동 보안 감사 이벤트 수신 내역 조회 (Status: 200 OK)"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

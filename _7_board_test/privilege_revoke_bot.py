@@ -49,7 +49,7 @@ def cfg():
       'allow': allow,
       'graylog_host': os.environ.get('GRAYLOG_HOST', 'localhost'),
       'graylog_port': int(os.environ.get('GRAYLOG_PORT', '12201')),
-      'student': os.environ.get('STUDENT', 'lsy'),
+      'student': os.environ.get('STUDENT', 'hjh'),
       'src_ip': os.environ.get('BOARD_SRC_IP', '127.0.0.1'),  # 신고에 남길 대표 IP
   }
 
@@ -92,12 +92,12 @@ def send_gelf(c, user):
 
 
 def main():
-  ap = argparse.ArgumentParser()
+  ap = argparse.ArgumentParser() # 도구1
   ap.add_argument('--dry-run', action='store_true', help='신고 없이 위반만 출력')
   ap.add_argument('--revoke', action='store_true', help='게시판 API 로 직접 회수까지(대체 경로)')
   args = ap.parse_args()
 
-  c = cfg()
+  c = cfg() # 도구2 : .env파일에서, 해당키를 조회함
   if not c['key']:
     print('[!] ADMIN_API_KEY(또는 SECURITY_API_KEY) 가 비어 있습니다. .env 확인.')
     sys.exit(2)
