@@ -9,6 +9,7 @@ from models.user import ROLE_LABEL
 
 from .gelf import send_gelf
 from .rbac import current_user
+from .seclog import write_seclog
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 
@@ -40,6 +41,7 @@ def login():
   if user and user.is_locked:
     send_gelf(f"login attempt on LOCKED account '{username}'",
               rule='login-bruteforce', username=username, src_ip=src_ip, locked='1')
+    write_seclog('login_failed', username, src_ip)   # 잠긴 계정 시도도 실패로 기록(Wazuh)
     return jsonify({'msg': '계정이 잠겨 있습니다. 관리자에게 문의하세요.',
                     'locked': True}), 423
 
@@ -51,12 +53,20 @@ def login():
     send_gelf(f"failed login for '{username}' from {src_ip}",
               rule='login-bruteforce', username=username or '(unknown)',
               src_ip=src_ip, count=1)
+    write_seclog('login_failed', username or '(unknown)', src_ip)   # 호스트 로그 → Wazuh
     return jsonify({'msg': '아이디 또는 비밀번호가 잘못되었습니다.'}), 401
 
   # ③ 성공 → 실패 카운트 초기화 + 토큰 발급
   if user.failed_logins:
     user.failed_logins = 0
     db.session.commit()
+  # 성공도 남긴다. 실패만 모으면 "누가 결국 뚫렸는가"를 알 수 없다 —
+  # 심야 접속·계정 탈취·한 계정 다중 IP 같은 탐지는 전부 성공 기록이 있어야 만든다.
+  # 남기는 값은 계정명·출발지 IP 뿐(비밀번호·토큰은 절대 남기지 않는다).
+  send_gelf(f"successful login for '{username}' from {src_ip}",
+            rule='login-success', username=username, src_ip=src_ip,
+            role=user.role or '')
+  write_seclog('login_success', username, src_ip)
   token = create_access_token(identity=str(user.id))
   # role 을 함께 내려주면 화면이 곧바로 등급에 맞는 메뉴를 그릴 수 있다.
   return jsonify(access_token=token, username=user.username,
