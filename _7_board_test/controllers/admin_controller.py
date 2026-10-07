@@ -14,6 +14,7 @@ from datetime import datetime, timedelta
 from functools import wraps
 
 from flask import Blueprint, current_app, jsonify, request
+from sqlalchemy.exc import IntegrityError
 
 from extensions import db
 from models import BlockedIP, Incident, SecurityEvent, User
@@ -226,19 +227,25 @@ def block_ip():
   actor = getattr(request, 'actor', 'unknown')
 
   if not db.session.get(BlockedIP, ip):
-    db.session.add(BlockedIP(ip=ip, reason=(data.get('reason') or f'자동 차단 by {actor}')[:200],
-                             blocked_by=actor))
-    ev = SecurityEvent(
-        student=(data.get('student') or actor)[:50], src_ip=ip,
-        fail_count=int(data.get('fail_count') or 0), decision='deny',
-        severity=data.get('severity', 'High'),
-        reason=(data.get('reason') or f'IP 실차단: {ip}')[:200],
-        users='', source=data.get('source', 'ip-guard'),
-        generated_at=data.get('generated_at'))
-    db.session.add(ev)
-    db.session.commit()
-    return jsonify({'msg': 'IP 차단 완료', 'ip': ip, 'blocked': True,
-                    'changed': True, 'event_id': ev.id, 'blocked_by': actor}), 200
+    try:
+      db.session.add(BlockedIP(ip=ip, reason=(data.get('reason') or f'자동 차단 by {actor}')[:200],
+                                 blocked_by=actor))
+      ev = SecurityEvent(
+          student=(data.get('student') or actor)[:50], src_ip=ip,
+          fail_count=int(data.get('fail_count') or 0), decision='deny',
+          severity=data.get('severity', 'High'),
+          reason=(data.get('reason') or f'IP 실차단: {ip}')[:200],
+          users='', source=data.get('source', 'ip-guard'),
+          generated_at=data.get('generated_at'))
+      db.session.add(ev)
+      db.session.commit()
+      return jsonify({'msg': 'IP 차단 완료', 'ip': ip, 'blocked': True,
+                      'changed': True, 'event_id': ev.id, 'blocked_by': actor}), 200
+    except IntegrityError:
+      # 동시 다발적인 요청으로 다른 스레드가 먼저 데이터를 넣었을 경우 예외 처리
+      db.session.rollback()
+      return jsonify({'msg': '이미 차단된 IP', 'ip': ip, 'blocked': True, 'changed': False}), 200
+
   return jsonify({'msg': '이미 차단된 IP', 'ip': ip, 'blocked': True, 'changed': False}), 200
 
 
