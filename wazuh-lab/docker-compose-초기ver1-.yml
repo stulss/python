@@ -1,0 +1,43 @@
+# wazuh-lab/docker-compose.yml
+name: wazuh-lab
+
+services:
+  wazuh-manager:
+    image: wazuh/wazuh-manager:4.9.0
+    container_name: wazuh-manager2
+    hostname: wazuh-manager2
+    restart: unless-stopped
+
+    # 한국 시간(KST) 사용
+    environment:
+      - TZ=Asia/Seoul
+
+    ulimits:
+      memlock: { soft: -1, hard: -1 }
+      nofile: { soft: 655360, hard: 655360 }
+
+    ports:
+      - "1514:1514/tcp"   # Agent → Manager 보안 데이터 전송
+      - "1515:1515/tcp"   # Agent 최초 등록(enrollment)
+
+    volumes:
+      # Wazuh 설정 보존
+      # ossec.conf, client.keys, local_rules.xml, local_decoder.xml 등
+      - wazuh_etc:/var/ossec/etc
+
+      - wazuh_logs:/var/ossec/logs
+      # 이 실습에서는 로그만 Named Volume으로 보존한다.
+      # /var/ossec/etc를 빈 호스트 폴더로 bind mount하지 않는다.
+      # Manager 설정 파일은 뒤에서 백업/복원 절차를 별도로 사용한다.
+
+    networks:
+      - graylog_net       # Graylog와 같은 Docker 네트워크
+
+networks:
+  graylog_net:
+    external: true
+    name: graylog_default # docker network ls로 확인한 실제 이름
+
+volumes:
+  wazuh_etc:
+  wazuh_logs:

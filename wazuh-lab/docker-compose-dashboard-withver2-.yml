@@ -37,9 +37,6 @@ services:
       - wazuh_etc:/var/ossec/etc
       - wazuh_logs:/var/ossec/logs
 
-      # 추가: 다중 그룹(default + flask-board) 병합 설정 보존
-      - wazuh_multigroups:/var/ossec/var/multigroups
-
       # 추가: Filebeat 설정 보존
       - filebeat_etc:/etc/filebeat
       - filebeat_var:/var/lib/filebeat
@@ -145,12 +142,11 @@ networks:
 
   graylog_net:
     external: true
-    name: 9_graylog_default
+    name: graylog_default
 
 volumes:
   wazuh_etc:
   wazuh_logs:
-  wazuh_multigroups:
 
   # 추가
   filebeat_etc:
