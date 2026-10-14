@@ -1,0 +1,131 @@
+{#
+  목록 표 + 체크박스 선택 + 일괄 처리 공용 도구 — 관리자 화면의 회원 표·차단 IP 표가 같이 쓴다.
+  _table_pager.html(페이저·정렬 머리글) 다음에 include 해야 한다.
+
+  쓰는 법 (표 하나당):
+    const t = createListTable({
+      url: '/api/admin/users', key: 'users',            // 응답에서 행 목록이 담긴 키
+      head, tbody, pager, total,                          // DOM 요소
+      cols: 10, emptyText: '…', sort: 'id', order: 'asc',
+      headers: () => ({...}), filters: () => ({ q, role }),
+      renderRow: (row) => '<tr>…<input class="u-check" value="키">…</tr>',
+      selection: { checkAll, rowClass: 'u-check', counters: [...], buttons: [...] },
+    });
+    t.load();                 // 지금 페이지 다시 조회 (Response 를 돌려준다 — 401 판정용)
+    t.reload();               // 1페이지부터 (검색·필터가 바뀌었을 때)
+    t.sel.values();           // 고른 키 목록(문자열)
+    bindFilterInputs(t, { search, selects: [...] });
+
+    bulkPost({ url, payload, confirmText, verb: '차단', unit: '명', msgEl, headers, after: t.load });
+
+  서버의 일괄 API 는 모두 _bulk_ok 형식(count·changed·skipped·not_found…)으로 답한다.
+#}
+<script>
+  /* 체크박스 선택 상태. 키는 체크박스 value(문자열) — 숫자 id 는 쓰는 쪽에서 Number 로. */
+  function createSelection({ tbody, checkAll, rowClass, counters = [], buttons = [] }) {
+    const keys = new Set();
+    const boxes = () => tbody.querySelectorAll('.' + rowClass);
+
+    function sync() {
+      counters.forEach(el => { el.textContent = keys.size; });
+      buttons.forEach(b => { b.disabled = keys.size === 0; });
+      const n = boxes().length;
+      checkAll.checked = n > 0 && keys.size === n;
+      checkAll.indeterminate = keys.size > 0 && keys.size < n;
+      checkAll.disabled = n === 0;
+    }
+
+    // 행 체크박스는 다시 그려질 때마다 새로 생기므로 tbody 에 한 번만 위임한다.
+    tbody.addEventListener('change', (e) => {
+      if (!e.target.classList.contains(rowClass)) return;
+      e.target.checked ? keys.add(e.target.value) : keys.delete(e.target.value);
+      sync();
+    });
+    // 머리글 체크박스 = 이 페이지 전체 선택/해제
+    checkAll.addEventListener('change', () => {
+      boxes().forEach(cb => {
+        cb.checked = checkAll.checked;
+        checkAll.checked ? keys.add(cb.value) : keys.delete(cb.value);
+      });
+      sync();
+    });
+
+    return {
+      values: () => [...keys],
+      get size() { return keys.size; },
+      /* 표를 다시 그린 뒤 부른다 — 안 보이는 행이 선택된 채 남으면
+         '선택 삭제'가 화면에 없는 엉뚱한 항목을 지운다. */
+      reset() { keys.clear(); sync(); },
+    };
+  }
+
+  /* 서버 페이징 목록 표 하나(조회·정렬·페이저·선택)를 묶는다. */
+  function createListTable(cfg) {
+    const state = newTableState();
+    state.sort = cfg.sort || state.sort;
+    state.order = cfg.order || state.order;
+    const sel = createSelection({ tbody: cfg.tbody, ...cfg.selection });
+    const msgRow = (cls, text) =>
+      `<tr><td colspan="${cfg.cols}" class="px-4 py-6 text-center ${cls}">${esc(text)}</td></tr>`;
+
+    async function load() {
+      const r = await fetch(cfg.url + '?' + tableQuery(state, cfg.filters()),
+                            { headers: cfg.headers() });
+      const d = await r.json().catch(() => ({}));
+      paintSortHeaders(cfg.head, state);
+      if (!r.ok) {          // 허용되지 않은 정렬·권한 없음 등 — 조용히 넘기지 않고 보여준다
+        cfg.tbody.innerHTML = msgRow('text-red-500', d.msg || '조회 실패');
+        cfg.pager.innerHTML = '';
+      } else {
+        if (cfg.total) cfg.total.textContent = d.total ?? '-';
+        const rows = d[cfg.key] || [];
+        cfg.tbody.innerHTML = rows.length
+          ? rows.map(cfg.renderRow).join('') : msgRow('text-gray-400', cfg.emptyText);
+        renderPager(cfg.pager, d, (p) => { state.page = p; load(); });
+      }
+      sel.reset();
+      return r;
+    }
+
+    bindSortHeaders(cfg.head, state, load);
+    return { state, sel, load, reload: () => { state.page = 1; return load(); } };
+  }
+
+  /* 검색창(타이핑이 멈춘 뒤 0.3초)·드롭다운이 바뀌면 1페이지부터 다시 조회. */
+  function bindFilterInputs(table, { search, selects = [] }) {
+    let timer;
+    if (search) search.addEventListener('input', () => {
+      clearTimeout(timer);
+      timer = setTimeout(table.reload, 300);
+    });
+    selects.forEach(el => el.addEventListener('change', table.reload));
+  }
+
+  function showBulkMsg(el, text, ok) {
+    el.classList.toggle('text-emerald-600', ok);
+    el.classList.toggle('text-red-600', !ok);
+    el.textContent = text;
+  }
+
+  /* 일괄 요청 → 확인창 → 결과 한 줄. 건너뛴 이유는 서버가 준 키로 그대로 알려준다. */
+  async function bulkPost({ url, payload, confirmText, verb, unit, msgEl, headers,
+                            after, selfNote = '본인 제외' }) {
+    if (!confirm(confirmText)) return;
+    const r = await fetch(url, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', ...headers() },
+      body: JSON.stringify(payload),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { showBulkMsg(msgEl, d.msg || `${verb} 실패 (HTTP ${r.status})`, false); return; }
+    const notes = [
+      d.skipped?.length && `이미 ${verb} ${d.skipped.length}`,
+      d.posts_deleted && `게시글 ${d.posts_deleted}개 함께 삭제`,
+      d.self_skipped?.length && selfNote,
+      d.protected?.length && '시스템 계정 제외',
+      d.invalid?.length && `형식 오류 ${d.invalid.length}(${d.invalid.slice(0, 3).join(', ')})`,
+      d.not_found?.length && `없음 ${d.not_found.length}`,
+    ].filter(Boolean);
+    showBulkMsg(msgEl, `${d.count}${unit} ${verb}했습니다` + notes.map(n => ' · ' + n).join(''), true);
+    if (after) after();
+  }
+</script>

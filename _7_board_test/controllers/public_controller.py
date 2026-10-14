@@ -2,17 +2,13 @@
 import requests
 from flask import Blueprint, current_app, jsonify
 
-from urllib.parse import unquote
-
 public_bp = Blueprint('public', __name__, url_prefix='/api/public')
 
 
 @public_bp.route('/posts', methods=['GET'])
 def get_public_posts():
-  raw_key = current_app.config.get('PUBLIC_API_KEY') or ''
-  service_key = unquote(raw_key.strip())
   params = {
-      'serviceKey': service_key,
+      'serviceKey': current_app.config.get('PUBLIC_API_KEY'),
       'numOfRows': '100',
       'pageNo': '1',
       'resultType': 'json',

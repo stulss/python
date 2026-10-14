@@ -6,12 +6,9 @@
 import os
 from datetime import timedelta
 
-from pathlib import Path
-
 from dotenv import load_dotenv
 
-BASE_DIR = Path(__file__).resolve().parent
-load_dotenv(BASE_DIR / '.env', override=True)  # .env → 환경변수 (강제 덮어쓰기)
+load_dotenv()  # .env → 환경변수 (import 시점 1회)
 
 
 class Config:
@@ -54,11 +51,7 @@ class Config:
   ]
 
   # ── 공공데이터(부산 테마여행) ──
-  PUBLIC_API_KEY = (
-      os.environ.get('PUBLIC_API_KEY')
-      or os.environ.get('OPENAPI_SERVICE_KEY')
-      or 'XCwvFxJAAOHXzppLdloapsDqYy3PjNXTLTkF7dY5q13G2+1gNPxWZPU+U3x5mEtISC8ComH1N1Ti+IqbyQsKIg=='
-  )
+  PUBLIC_API_KEY = os.environ.get('PUBLIC_API_KEY')
   PUBLIC_API_URL = (
       'http://apis.data.go.kr/6260000/RecommendedService/getRecommendedKr'
   )

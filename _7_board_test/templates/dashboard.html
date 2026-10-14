@@ -10,7 +10,7 @@
 
   {% include 'partials/_nav.html' %}
 
-  <main class="max-w-5xl mx-auto px-4 py-6 flex-1 w-full">
+  <main class="max-w-5xl xl:max-w-7xl 2xl:max-w-screen-2xl mx-auto px-4 py-6 flex-1 w-full">
 
     <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
       <div>
@@ -64,12 +64,20 @@
             같은 출발지의 이벤트를 <b>한 사건</b>으로 묶은 기록 — 열린 티켓은 아직 대응이 안 끝난 것
           </p>
         </div>
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-4 flex-wrap">
           <div class="text-xs text-gray-500">
             열림 <b id="inc-open" class="text-red-600">-</b>
             · 종료 <b id="inc-closed" class="text-gray-500">-</b>
             <span id="inc-sev" class="text-gray-400"></span>
           </div>
+          <select id="inc-severity"
+                  class="border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="">심각도 전체</option>
+            <option value="Critical">Critical</option>
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
+          </select>
           <div class="flex gap-1 text-xs">
             <button data-status="" class="inc-btn px-2 py-1 rounded bg-indigo-600 text-white">전체</button>
             <button data-status="open" class="inc-btn px-2 py-1 rounded bg-gray-100 hover:bg-gray-200">열림</button>
@@ -77,54 +85,86 @@
           </div>
         </div>
       </div>
+      <!-- 종료 도구 — admin 로그인일 때만 보인다(서버도 admin 만 통과시킨다) -->
+      <div id="inc-actions" class="hidden px-4 pb-3 flex items-center gap-2 flex-wrap text-xs">
+        <button id="inc-close-selected" disabled
+                class="px-3 py-1.5 rounded bg-red-600 text-white font-medium hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed">
+          선택 종료 (<span id="inc-sel-count">0</span>)
+        </button>
+        <button id="inc-close-all"
+                class="px-3 py-1.5 rounded border border-red-300 text-red-700 font-medium hover:bg-red-50">
+          열린 티켓 전체 종료
+        </button>
+        <span class="text-gray-400">전체 종료는 지금 고른 학생·심각도 조건의 열린 티켓 전부(다른 페이지 포함)</span>
+        <span id="inc-action-msg" class="ml-auto"></span>
+      </div>
       <div class="overflow-x-auto">
-        <table class="w-full text-sm whitespace-nowrap">
-          <thead class="bg-gray-50 text-gray-600">
+        <table class="resp-table w-full text-sm whitespace-nowrap">
+          <!-- data-sort 가 있는 머리글만 눌러서 정렬된다(서버 허용 컬럼과 같다) -->
+          <thead id="incident-head" class="bg-gray-50 text-gray-600">
             <tr>
-              <th class="text-left px-4 py-2 font-medium">#</th>
-              <th class="text-left px-4 py-2 font-medium">출발지 IP</th>
-              <th class="text-left px-4 py-2 font-medium">심각도</th>
-              <th class="text-left px-4 py-2 font-medium">상태</th>
-              <th class="text-left px-4 py-2 font-medium">관련 이벤트</th>
+              <th class="inc-admin-col hidden px-4 py-2 w-8">
+                <input id="inc-check-all" type="checkbox" title="이 페이지의 열린 티켓 전체 선택"
+                       class="align-middle cursor-pointer">
+              </th>
+              <th data-sort="id" class="text-left px-4 py-2 font-medium">#</th>
+              <th data-sort="src_ip" class="text-left px-4 py-2 font-medium">출발지 IP</th>
+              <th data-sort="severity" class="text-left px-4 py-2 font-medium">심각도</th>
+              <th data-sort="status" class="text-left px-4 py-2 font-medium">상태</th>
+              <th data-sort="event_count" class="text-left px-4 py-2 font-medium">관련 이벤트</th>
               <th class="text-left px-4 py-2 font-medium">조치</th>
               <th class="text-left px-4 py-2 font-medium">제목</th>
-              <th class="text-left px-4 py-2 font-medium">생성 시각</th>
-              <th class="text-left px-4 py-2 font-medium">종료 시각</th>
+              <th data-sort="created_at" class="text-left px-4 py-2 font-medium">생성 시각</th>
+              <th data-sort="closed_at" class="text-left px-4 py-2 font-medium">종료 시각</th>
             </tr>
           </thead>
           <tbody id="incident-rows" class="divide-y divide-gray-100">
-            <tr><td colspan="9" class="px-4 py-6 text-center text-gray-400">불러오는 중…</td></tr>
+            <tr><td colspan="10" class="px-4 py-6 text-center text-gray-400">불러오는 중…</td></tr>
           </tbody>
         </table>
       </div>
+      <div id="incident-pager"
+           class="px-4 py-3 border-t flex items-center justify-between flex-wrap gap-2 text-sm"></div>
       <p class="px-4 py-2 text-xs text-gray-400 border-t">
-        티켓 생성·종료는 관리자 API(<code>/api/admin/incident</code>, <code>/incident/close</code>)에서 한다 — 이 화면은 <b>읽기 전용</b>.
+        티켓 생성은 관리자 API(<code>/api/admin/incident</code>)에서 한다.
+        종료는 <a href="/admin" class="underline">admin 으로 로그인</a>하면 이 화면에서 선택·전체 종료할 수 있다
+        (<code>POST /api/admin/incidents/close</code>) — 로그인 전에는 <b>읽기 전용</b>.
       </p>
     </section>
 
     <!-- 최근 이벤트 -->
     <section class="bg-white rounded-xl shadow-sm overflow-hidden">
-      <div class="p-4 flex items-center justify-between">
+      <div class="p-4 flex items-center justify-between flex-wrap gap-3">
         <h3 class="font-semibold">최근 이벤트</h3>
-        <div class="flex gap-1 text-xs">
-          <button data-decision="" class="filter-btn px-2 py-1 rounded bg-indigo-600 text-white">전체</button>
-          <button data-decision="deny" class="filter-btn px-2 py-1 rounded bg-gray-100 hover:bg-gray-200">거부</button>
-          <button data-decision="allow" class="filter-btn px-2 py-1 rounded bg-gray-100 hover:bg-gray-200">허용</button>
+        <div class="flex items-center gap-3 flex-wrap">
+          <select id="ev-severity"
+                  class="border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="">심각도 전체</option>
+            <option value="Critical">Critical</option>
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
+          </select>
+          <div class="flex gap-1 text-xs">
+            <button data-decision="" class="filter-btn px-2 py-1 rounded bg-indigo-600 text-white">전체</button>
+            <button data-decision="deny" class="filter-btn px-2 py-1 rounded bg-gray-100 hover:bg-gray-200">거부</button>
+            <button data-decision="allow" class="filter-btn px-2 py-1 rounded bg-gray-100 hover:bg-gray-200">허용</button>
+          </div>
         </div>
       </div>
       <!-- 표는 좁은 화면에서 가로 스크롤 -->
       <div class="overflow-x-auto">
-        <table class="w-full text-sm whitespace-nowrap">
-          <thead class="bg-gray-50 text-gray-600">
+        <table class="resp-table w-full text-sm whitespace-nowrap">
+          <thead id="event-head" class="bg-gray-50 text-gray-600">
             <tr>
-              <th class="text-left px-4 py-2 font-medium">#</th>
-              <th class="text-left px-4 py-2 font-medium">학생</th>
-              <th class="text-left px-4 py-2 font-medium">출발지 IP</th>
-              <th class="text-left px-4 py-2 font-medium">판정</th>
-              <th class="text-left px-4 py-2 font-medium">심각도</th>
-              <th class="text-left px-4 py-2 font-medium">횟수</th>
+              <th data-sort="id" class="text-left px-4 py-2 font-medium">#</th>
+              <th data-sort="student" class="text-left px-4 py-2 font-medium">학생</th>
+              <th data-sort="src_ip" class="text-left px-4 py-2 font-medium">출발지 IP</th>
+              <th data-sort="decision" class="text-left px-4 py-2 font-medium">판정</th>
+              <th data-sort="severity" class="text-left px-4 py-2 font-medium">심각도</th>
+              <th data-sort="fail_count" class="text-left px-4 py-2 font-medium">횟수</th>
               <th class="text-left px-4 py-2 font-medium">사유</th>
-              <th class="text-left px-4 py-2 font-medium">저장 시각</th>
+              <th data-sort="created_at" class="text-left px-4 py-2 font-medium">저장 시각</th>
             </tr>
           </thead>
           <tbody id="event-rows" class="divide-y divide-gray-100">
@@ -132,6 +172,8 @@
           </tbody>
         </table>
       </div>
+      <div id="event-pager"
+           class="px-4 py-3 border-t flex items-center justify-between flex-wrap gap-2 text-sm"></div>
     </section>
 
     <p class="text-xs text-gray-400 mt-4">
@@ -141,9 +183,16 @@
     </p>
   </main>
 
+  {# 페이저·정렬 머리글 공용 함수 (두 표가 같이 쓴다) #}
+  {% include 'partials/_table_pager.html' %}
+
   <script>
     let currentDecision = '';
     let currentStatus = '';
+
+    // 표마다 '지금 몇 페이지·어떤 컬럼·어느 방향'을 따로 기억한다.
+    const evState = newTableState();     // 최근 이벤트
+    const incState = newTableState();    // 인시던트 티켓
 
     const esc = (s) => String(s ?? '').replace(/[&<>"']/g,
       c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -158,6 +207,9 @@
       const v = document.getElementById('student-filter').value;
       return v ? `student=${encodeURIComponent(v)}` : '';
     }
+
+    /* 요약 카드용(페이징 없는 쪽) 학생 필터 값만 꺼낸다. */
+    const studentValue = () => document.getElementById('student-filter').value;
 
     async function loadStudents() {
       try {
@@ -196,13 +248,27 @@
     }
 
     async function loadEvents() {
-      const parts = [studentParam(), currentDecision ? `decision=${currentDecision}` : '', 'limit=50']
-        .filter(Boolean).join('&');
-      const r = await fetch('/api/security/events?' + parts);
-      const d = await r.json();
+      const head = document.getElementById('event-head');
       const tbody = document.getElementById('event-rows');
+      const qs = tableQuery(evState, {
+        student: studentValue(),
+        decision: currentDecision,
+        severity: document.getElementById('ev-severity').value,
+      });
+
+      const r = await fetch('/api/security/events?' + qs);
+      const d = await r.json();
+      paintSortHeaders(head, evState);
+
+      if (!r.ok) {        // 허용되지 않은 정렬 컬럼 등 — 조용히 넘기지 않고 보여준다
+        tbody.innerHTML = `<tr><td colspan="8" class="px-4 py-6 text-center text-red-500">${esc(d.msg || '조회 실패')}</td></tr>`;
+        document.getElementById('event-pager').innerHTML = '';
+        return;
+      }
       if (!d.events || d.events.length === 0) {
         tbody.innerHTML = '<tr><td colspan="8" class="px-4 py-6 text-center text-gray-400">기록이 없습니다.</td></tr>';
+        renderPager(document.getElementById('event-pager'), d,
+          (p) => { evState.page = p; loadEvents(); });
         return;
       }
       tbody.innerHTML = d.events.map(e => `
@@ -213,9 +279,12 @@
           <td class="px-4 py-2">${badge(e.decision)}</td>
           <td class="px-4 py-2 font-medium ${sevColor(e.severity)}">${esc(e.severity)}</td>
           <td class="px-4 py-2">${e.fail_count}</td>
-          <td class="px-4 py-2 text-gray-600 max-w-xs truncate" title="${esc(e.reason)}">${esc(e.reason)}</td>
-          <td class="px-4 py-2 text-gray-400">${esc((e.created_at || '').replace('T', ' ').slice(0, 19))}</td>
+          <td class="wrap-cell px-4 py-2 text-gray-600 max-w-xs truncate" title="${esc(e.reason)}">${esc(e.reason)}</td>
+          <td class="date-cell px-4 py-2 text-gray-400">${esc((e.created_at || '').replace('T', ' ').slice(0, 19))}</td>
         </tr>`).join('');
+
+      renderPager(document.getElementById('event-pager'), d,
+        (p) => { evState.page = p; loadEvents(); });
     }
 
     const statusBadge = (st) => st === 'open'
@@ -235,33 +304,159 @@
     }
 
     async function loadIncidents() {
-      const parts = [studentParam(), currentStatus ? 'status=' + currentStatus : '', 'limit=50']
-        .filter(Boolean).join('&');
-      const r = await fetch('/api/security/incidents?' + parts);
-      const d = await r.json();
+      const head = document.getElementById('incident-head');
       const tbody = document.getElementById('incident-rows');
-      if (!d.incidents || d.incidents.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" class="px-4 py-6 text-center text-gray-400">티켓이 없습니다.</td></tr>';
+      const qs = tableQuery(incState, {
+        student: studentValue(),
+        status: currentStatus,
+        severity: document.getElementById('inc-severity').value,
+      });
+
+      const r = await fetch('/api/security/incidents?' + qs);
+      const d = await r.json();
+      paintSortHeaders(head, incState);
+
+      // 페이지·필터·정렬이 바뀌면 화면의 줄이 바뀐다 — 안 보이는 줄이 선택된 채
+      // 남아 있으면 '선택 종료'가 엉뚱한 티켓을 닫는다. 그래서 매번 비운다.
+      incSelected.clear();
+      updateSelectionUi();
+      const cols = isAdmin ? 10 : 9;
+
+      if (!r.ok) {
+        tbody.innerHTML = `<tr><td colspan="${cols}" class="px-4 py-6 text-center text-red-500">${esc(d.msg || '조회 실패')}</td></tr>`;
+        document.getElementById('incident-pager').innerHTML = '';
         return;
       }
+      if (!d.incidents || d.incidents.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="${cols}" class="px-4 py-6 text-center text-gray-400">티켓이 없습니다.</td></tr>`;
+        updateSelectionUi();
+        renderPager(document.getElementById('incident-pager'), d,
+          (p) => { incState.page = p; loadIncidents(); });
+        return;
+      }
+      // 체크박스는 열린 티켓에만 — 이미 종료된 티켓은 닫을 것이 없다.
+      const checkCell = (t) => !isAdmin ? ''
+        : `<td class="px-4 py-2">${t.status === 'open'
+            ? `<input type="checkbox" class="inc-check cursor-pointer" value="${t.id}">` : ''}</td>`;
       tbody.innerHTML = d.incidents.map(t => `
         <tr class="hover:bg-gray-50">
+          ${checkCell(t)}
           <td class="px-4 py-2 text-gray-400">${t.id}</td>
           <td class="px-4 py-2 font-mono">${esc(t.src_ip)}</td>
           <td class="px-4 py-2 font-medium ${sevColor(t.severity)}">${esc(t.severity)}</td>
           <td class="px-4 py-2">${statusBadge(t.status)}</td>
           <td class="px-4 py-2">${t.event_count}</td>
-          <td class="px-4 py-2 text-gray-600">${esc(t.actions)}</td>
-          <td class="px-4 py-2 text-gray-600 max-w-xs truncate" title="${esc(t.summary)}">${esc(t.title)}</td>
-          <td class="px-4 py-2 text-gray-400">${esc((t.created_at || '').replace('T', ' ').slice(0, 19))}</td>
-          <td class="px-4 py-2 text-gray-400">${esc((t.closed_at || '-').replace('T', ' ').slice(0, 19))}</td>
+          <td class="wrap-cell px-4 py-2 text-gray-600">${esc(t.actions)}</td>
+          <td class="wrap-cell px-4 py-2 text-gray-600 max-w-xs truncate" title="${esc(t.summary)}">${esc(t.title)}</td>
+          <td class="date-cell px-4 py-2 text-gray-400">${esc((t.created_at || '').replace('T', ' ').slice(0, 19))}</td>
+          <td class="date-cell px-4 py-2 text-gray-400">${esc((t.closed_at || '-').replace('T', ' ').slice(0, 19))}</td>
         </tr>`).join('');
+
+      updateSelectionUi();
+      renderPager(document.getElementById('incident-pager'), d,
+        (p) => { incState.page = p; loadIncidents(); });
     }
 
-    function reload() { loadSummary(); loadEvents(); loadIncidentSummary(); loadIncidents(); }
+    /* ── 티켓 종료 (admin 만) ────────────────────────────────
+       대시보드는 누구나 열 수 있으므로 버튼을 숨기는 것은 편의일 뿐이고,
+       실제 차단은 서버(/api/admin/incidents/close 의 admin_required)가 한다. */
+    let isAdmin = false;
+    const incSelected = new Set();                    // 고른 티켓 id
+    const authHeader = () => ({ 'Authorization': 'Bearer ' + localStorage.getItem('token') });
+
+    async function detectAdmin() {
+      if (!localStorage.getItem('token')) return false;
+      try {
+        const r = await fetch('/api/auth/me', { headers: authHeader() });
+        return r.ok && (await r.json()).is_admin === true;
+      } catch (e) { return false; }
+    }
+
+    function updateSelectionUi() {
+      document.getElementById('inc-sel-count').textContent = incSelected.size;
+      document.getElementById('inc-close-selected').disabled = incSelected.size === 0;
+      const boxes = document.querySelectorAll('#incident-rows .inc-check');
+      const all = document.getElementById('inc-check-all');
+      all.checked = boxes.length > 0 && incSelected.size === boxes.length;
+      all.indeterminate = incSelected.size > 0 && incSelected.size < boxes.length;
+      all.disabled = boxes.length === 0;
+    }
+
+    function showActionMsg(text, ok) {
+      const el = document.getElementById('inc-action-msg');
+      el.className = 'ml-auto ' + (ok ? 'text-emerald-600' : 'text-red-600');
+      el.textContent = text;
+    }
+
+    async function closeIncidents(payload, confirmText) {
+      if (!confirm(confirmText)) return;
+      const r = await fetch('/api/admin/incidents/close', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeader() },
+        body: JSON.stringify(payload),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        showActionMsg(d.msg || `종료 실패 (HTTP ${r.status})`, false);
+        return;
+      }
+      const extra = (d.skipped?.length ? ` · 이미 종료 ${d.skipped.length}` : '')
+        + (d.not_found?.length ? ` · 없음 ${d.not_found.length}` : '');
+      showActionMsg(`${d.count}건 종료했습니다${extra}`, true);
+      loadIncidentSummary(); loadIncidents();
+    }
+
+    // 행 체크박스는 다시 그려질 때마다 새로 생기므로 tbody 에 한 번만 위임해 둔다.
+    document.getElementById('incident-rows').addEventListener('change', (e) => {
+      if (!e.target.classList.contains('inc-check')) return;
+      const id = Number(e.target.value);
+      e.target.checked ? incSelected.add(id) : incSelected.delete(id);
+      updateSelectionUi();
+    });
+
+    document.getElementById('inc-check-all').addEventListener('change', (e) => {
+      document.querySelectorAll('#incident-rows .inc-check').forEach(cb => {
+        cb.checked = e.target.checked;
+        const id = Number(cb.value);
+        e.target.checked ? incSelected.add(id) : incSelected.delete(id);
+      });
+      updateSelectionUi();
+    });
+
+    document.getElementById('inc-close-selected').addEventListener('click', () => {
+      const ids = [...incSelected];
+      if (ids.length) closeIncidents({ ids }, `선택한 티켓 ${ids.length}건을 종료할까요?`);
+    });
+
+    document.getElementById('inc-close-all').addEventListener('click', () => {
+      const student = studentValue();
+      const severity = document.getElementById('inc-severity').value;
+      const scope = [student && `학생 ${student}`, severity && `심각도 ${severity}`]
+        .filter(Boolean).join(' · ') || '조건 없음';
+      closeIncidents({ all_open: true, student, severity },
+        `열린 티켓을 전부 종료할까요? (${scope}, 다른 페이지 포함)`);
+    });
+
+    /* 필터가 바뀌면 두 표 모두 1페이지로 — 3페이지를 보던 중에 필터를 좁히면
+       그 페이지에는 아무것도 없어 '기록이 없습니다'만 뜬다. */
+    function reload() {
+      evState.page = 1;
+      incState.page = 1;
+      loadSummary(); loadEvents(); loadIncidentSummary(); loadIncidents();
+    }
 
     document.getElementById('refresh-btn').addEventListener('click', () => { loadStudents(); reload(); });
     document.getElementById('student-filter').addEventListener('change', reload);
+
+    document.getElementById('ev-severity').addEventListener('change', () => {
+      evState.page = 1;
+      loadEvents();
+    });
+    document.getElementById('inc-severity').addEventListener('change', () => {
+      incState.page = 1;
+      loadIncidents();
+    });
+
     document.querySelectorAll('.filter-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         currentDecision = btn.dataset.decision;
@@ -269,6 +464,7 @@
           b.className = 'filter-btn px-2 py-1 rounded ' +
             (b === btn ? 'bg-indigo-600 text-white' : 'bg-gray-100 hover:bg-gray-200');
         });
+        evState.page = 1;
         loadEvents();
       });
     });
@@ -280,12 +476,23 @@
           b.className = 'inc-btn px-2 py-1 rounded ' +
             (b === btn ? 'bg-indigo-600 text-white' : 'bg-gray-100 hover:bg-gray-200');
         });
+        incState.page = 1;
         loadIncidents();
       });
     });
 
+    // 머리글 클릭 정렬 연결 (표마다 자기 상태 객체를 쓴다)
+    bindSortHeaders(document.getElementById('event-head'), evState, loadEvents);
+    bindSortHeaders(document.getElementById('incident-head'), incState, loadIncidents);
+
     loadStudents();
-    reload();
+    // admin 여부를 먼저 정해야 티켓 표가 체크박스 열을 그릴지 안다.
+    detectAdmin().then(ok => {
+      isAdmin = ok;
+      document.getElementById('inc-actions').classList.toggle('hidden', !ok);
+      document.querySelectorAll('.inc-admin-col').forEach(el => el.classList.toggle('hidden', !ok));
+      reload();
+    });
   </script>
 </body>
 </html>

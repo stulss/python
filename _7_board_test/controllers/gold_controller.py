@@ -8,6 +8,7 @@ from flask import Blueprint, jsonify, request
 
 from models import Post
 from .gelf import send_gelf
+from .seclog import write_gold_access
 from .rbac import role_required
 
 gold_bp = Blueprint('gold', __name__, url_prefix='/api/gold')
@@ -27,6 +28,12 @@ def gold_posts():
               username=user.username, role=user.role or '',
               src_ip=(request.headers.get('X-Forwarded-For', request.remote_addr)
                       or '0.0.0.0').split(',')[0].strip())
+  except Exception:
+    pass
+  # 이중출력: Wazuh 에이전트가 읽는 security.log 에도 한 줄(S9 wazuh-dashboard 노출)
+  try:
+    write_gold_access(user.username,
+                      request.headers.get('X-Forwarded-For', request.remote_addr))
   except Exception:
     pass
 

@@ -17,6 +17,7 @@ from controllers import all_blueprints
 from extensions import db, jwt
 from models import BlockedIP
 from controllers.gelf import send_gelf
+from controllers.seclog import write_404log
 
 
 def _client_ip():
@@ -109,17 +110,32 @@ def create_app(config_class=Config):
       return jsonify({'msg': '차단된 IP 입니다(관리자에게 문의).', 'ip': ip, 'blocked': True}), 403
     return None
 
-  
   @app.after_request
   def _web_scan_probe(response):
-    """스캐너(nikto·dirbuster 등)는 없는 경로에 404 를 대량 유발한다.
-    404 를 GELF(rule='web-scan')로 신고 → Graylog src_ip 집계가 '한 IP 404 폭주'를 탐지."""
+    """HTTP 404 발생 시 ① Wazuh security.log 기록 + ② Graylog GELF 전송.
+
+    스캐너(nikto·dirbuster 등)는 없는 경로에 404 를 대량 유발한다 → 호스트 센서(Wazuh)와
+    SIEM(Graylog) 두 경로가 함께 '한 IP 404 폭주'를 탐지한다.
+    (after_request 훅은 어떤 경우에도 예외를 던지면 안 되므로 각 단계를 감싼다.)"""
+    if response.status_code != 404 or request.path.startswith('/api/admin'):
+      return response
+
+    ip = _client_ip()
+    path = request.path[:120]
+
+    # ① Wazuh security.log 기록
     try:
-      if response.status_code == 404 and not request.path.startswith('/api/admin'):
-        send_gelf(f"404 probe {request.path[:80]}", rule='web-scan',
-                  src_ip=_client_ip(), path=request.path[:120], code=404)
+      write_404log(ip, path)
     except Exception:
-      pass          # 신고 실패가 응답을 막지 않게
+      pass
+
+    # ② 기존 Graylog GELF 전송(404 집계 및 n8n 자동 차단)
+    try:
+      send_gelf(f"404 probe {path[:80]}", rule='web-scan',
+                src_ip=ip, path=path, code=404)
+    except Exception:
+      pass
+
     return response
 
   return app
